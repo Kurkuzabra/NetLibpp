@@ -50,7 +50,8 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          path: ./dist/*.whl
+          name: python-package-distributions
+          path: dist
 
   # make_sdist:
   #   name: Make SDist
