@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "sampleproject"
+name = "netlibpp"
 version = "0.0.1"
 description = "A sample Python lib"
 readme = "README.md"
