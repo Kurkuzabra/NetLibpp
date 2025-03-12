@@ -70,7 +70,7 @@ jobs:
   #       path: dist/*.tar.gz
     
   pypi-publish:
-    requires: [build_wheels]
+    needs: [build_wheels]
     name: upload release to PyPI
     runs-on: ubuntu-latest
     # Specifying a GitHub environment is optional, but strongly encouraged
