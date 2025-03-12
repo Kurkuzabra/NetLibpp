@@ -11,7 +11,7 @@ jobs:
         os: [ubuntu-latest]
         # container:
         #   image: quay.io/pypa/manylinux_2_34_x86_64
-        include:
+        # include:
           # Specify architectures for Windows
           # - os: windows-latest
           #   arch: x64
@@ -27,9 +27,9 @@ jobs:
           #   arch: arm64
           #   cibw_platform: macos
           # Linux (defaults to x86_64)
-          - os: ubuntu-latest
-            arch: x86_64
-            cibw_platform: linux
+          # - os: ubuntu-latest
+          #   arch: x86_64
+          #   cibw_platform: linux
     steps:
       - uses: actions/checkout@v4
 
@@ -43,12 +43,12 @@ jobs:
 
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
-        env:
+        # env:
           # Specify the platform and architecture
-          CIBW_PLATFORM: ${{ matrix.cibw_platform }}
-          CIBW_ARCHS: ${{ matrix.arch }}
+          # CIBW_PLATFORM: ${{ matrix.cibw_platform }}
+          # CIBW_ARCHS: ${{ matrix.arch }}
           # CIBW_BUILD: "cp36-* cp37-* cp38-* cp39-* cp310-*"
-          CIBW_BUILD: "p39-*"
+          # CIBW_BUILD: "p39-*"
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4

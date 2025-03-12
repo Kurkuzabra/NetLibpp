@@ -76,7 +76,6 @@ test = ["coverage"]
 
 [tool.cibuildwheel]
 
-before-all = "g++ --version"
 test-command = "echo 'installed'"
 
 manylinux-x86_64-image = "quay.io/pypa/manylinux_2_34_x86_64:latest"
