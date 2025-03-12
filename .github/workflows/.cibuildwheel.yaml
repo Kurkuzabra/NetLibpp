@@ -31,7 +31,7 @@ jobs:
           #   arch: x86_64
           #   cibw_platform: linux
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -51,6 +51,6 @@ jobs:
           CIBW_BUILD: "p39-*"
 
       - name: Upload wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
