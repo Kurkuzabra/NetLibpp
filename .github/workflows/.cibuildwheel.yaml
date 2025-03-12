@@ -52,24 +52,25 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
 
-  make_sdist:
-    name: Make SDist
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Optional, use if you use setuptools_scm
-        submodules: false  # Optional, use if you have submodules
+  # make_sdist:
+  #   name: Make SDist
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #     with:
+  #       fetch-depth: 0  # Optional, use if you use setuptools_scm
+  #       submodules: false  # Optional, use if you have submodules
 
-    - name: Build SDist
-      run: pipx run build --sdist
+  #   - name: Build SDist
+  #     run: pipx run build --sdist
 
-    - uses: actions/upload-artifact@v4
-      with:
-        name: cibw-sdist
-        path: dist/*.tar.gz
+  #   - uses: actions/upload-artifact@v4
+  #     with:
+  #       name: cibw-sdist
+  #       path: dist/*.tar.gz
     
   pypi-publish:
+    requires: [build_wheels]
     name: upload release to PyPI
     runs-on: ubuntu-latest
     # Specifying a GitHub environment is optional, but strongly encouraged
@@ -82,4 +83,7 @@ jobs:
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          path: wheelhouse
 
+  
