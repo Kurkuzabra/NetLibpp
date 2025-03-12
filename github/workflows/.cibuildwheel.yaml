@@ -1,6 +1,6 @@
 name: Build wheels
 
-# on: [push, pull_request]
+on: [push, pull_request]
 
 jobs:
   build_wheels:
@@ -50,7 +50,7 @@ jobs:
           # CIBW_BUILD: "cp36-* cp37-* cp38-* cp39-* cp310-*"
           CIBW_BUILD: "p39-*"
 
-      # - name: Upload wheels
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     path: ./wheelhouse/*.whl
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
