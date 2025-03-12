@@ -45,12 +45,12 @@ jobs:
         uses: docker/setup-qemu-action@v1
 
       - name: Build wheels
-        run: python -m cibuildwheel --output-dir wheelhouse
+        run: python -m cibuildwheel --output-dir dist
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          path: ./wheelhouse/*.whl
+          path: ./dist/*.whl
 
   # make_sdist:
   #   name: Make SDist
@@ -83,7 +83,5 @@ jobs:
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          name: artifact
 
   
