@@ -79,6 +79,7 @@ jobs:
     permissions:
       # IMPORTANT: this permission is mandatory for Trusted Publishing
       id-token: write
+      url: https://pypi.org/p/netlibpp
     steps:
       # retrieve your distributions here
       - name: Download all the dists
