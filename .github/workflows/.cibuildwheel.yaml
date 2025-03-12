@@ -11,7 +11,7 @@ jobs:
         os: [ubuntu-latest]
         # container:
         #   image: quay.io/pypa/manylinux_2_34_x86_64
-        # include:
+        include:
           # Specify architectures for Windows
           # - os: windows-latest
           #   arch: x64
