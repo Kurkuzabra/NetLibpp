@@ -285,7 +285,7 @@ hg::Simplex<hg::Point<T>, T> get_Simplex_by_points(const py::array_t<T>& points_
     declare_LpComplexFromCoordMatrix(Module, Type) \
 }
 
-PYBIND11_MODULE(graph_func, m)
+PYBIND11_MODULE(netlibpp_cpy, m)
 {
     m.doc() = "pybind11 graph filtration";
     m.def("filtrate", &filtrate, "filter complex", py::arg("A"), py::arg("n"), py::arg("p"), py::arg("threads"));

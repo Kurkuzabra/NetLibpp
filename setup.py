@@ -9,7 +9,7 @@ import pybind11
 # Define the C++ extension
 ext_modules = [
     Extension(
-        "netlibpp_cpy",
+        name="netlibpp_cpy",
         sources=["netlibpp/src/include/graph_func.cpp"],
         include_dirs=[pybind11.get_include()],
         language="c++",
@@ -21,12 +21,10 @@ ext_modules = [
 
 setup(
     name="netlibpp",
-    version="0.0.1",
+    version="0.0.3",
 
-    packages=["netlibpp", "netlibpp/src/include"],
+    packages=["netlibpp"],
     ext_modules=ext_modules,
-    # cmdclass={"build_ext": CMakeBuild},
-    # install_requires=["pybind11>=2.6.0"],
     install_requires=[],
     python_requires=">=3.6",
 )
