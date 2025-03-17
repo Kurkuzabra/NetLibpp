@@ -4,7 +4,8 @@
 #include <limits>
 #include <stdexcept>
 #include <functional>
-
+#include <thread>
+#include <mutex>
 #include "Point_t.cpp"
 
 #ifndef PYBIND11_INCLUDE
@@ -25,6 +26,8 @@ namespace hypergraph
     template <typename Simplex_t, typename Point_t, typename T>
     struct Complex
     {
+    protected:
+        std::mutex cmplx_mtx;
     public:
         size_t dim;
         // dimension of a complex (the largest dimension of a simplex in a complex)
@@ -33,8 +36,24 @@ namespace hypergraph
         // simplexes[simplexse.size() - 1] is always an empty vector
 
         Complex() : simplexes(std::vector<std::vector<Simplex_t>>(1)), dim(0) {}
+        Complex(const Complex& cplx) : simplexes(cplx.simplexes), dim(cplx.dim) {}
+        Complex(Complex&& cplx) : simplexes(std::move(cplx.simplexes)), dim(cplx.dim) {}
+        Complex &operator=(const Complex &cplx)
+        {
+            simplexes = cplx.simplexes;
+            dim = cplx.dim;
+            return *this;
+        }
+        Complex &operator=(Complex &&cplx)
+        {
+            simplexes = std::move(cplx.simplexes);
+            dim = cplx.dim;
+            return *this;
+        }
+        ~Complex() = default;
 
         void append(const Simplex_t &simplex_);
+        void safe_append(const Simplex_t &simplex_); // for multithreading
 
         const std::vector<Simplex_t> &filtration(size_t);
         // all n-simplexes
@@ -55,7 +74,7 @@ namespace hypergraph
     };
 
     template <typename Simplex_t, typename T>
-    struct ComplexFromMatrix : public Complex<Simplex_t, PointIndex<T>, T>
+    struct ComplexFromMatrix : public Complex<Simplex_t, size_t, T>
     {
         T *dist_ptr;
         size_t N;
@@ -79,10 +98,10 @@ namespace hypergraph
         {
             return this->dist_ptr[i * this->M + j];
         };
-        std::function<T(const PointIndex<T> &, const PointIndex<T> &)> dist =
-            [&](const PointIndex<T> &A, const PointIndex<T> &B)
+        std::function<T(const size_t &, const size_t &)> dist =
+            [&](const size_t &A, const size_t &B)
         {
-            return dist_idx(A.get_index(), B.get_index());
+            return dist_idx(A, B);
         };
 
         // needed for pybind11 to properly copy/move objects
@@ -117,10 +136,10 @@ namespace hypergraph
             }
             return std::sqrt(res);
         };
-        std::function<T(const PointIndex<T> &, const PointIndex<T> &)> dist =
-            [&](const PointIndex<T> &A, const PointIndex<T> &B)
+        std::function<T(const size_t &, const size_t &)> dist =
+            [&](const size_t &A, const size_t &B)
         {
-            return dist_idx(A.get_index(), B.get_index());
+            return dist_idx(A, B);
         };
         // functions to get lp-distance between points
         std::function<T(const size_t &, const size_t &, const double &)> lp_dist_idx =
@@ -133,10 +152,10 @@ namespace hypergraph
             }
             return std::pow(res, 1.0 / p);
         };
-        std::function<T(const PointIndex<T> &, const PointIndex<T> &, const double &)> lp_dist =
-            [&](const PointIndex<T> &A, const PointIndex<T> &B, const double &p)
+        std::function<T(const size_t &, const size_t &, const double &)> lp_dist =
+            [&](const size_t &A, const size_t &B, const double &p)
         {
-            return lp_dist_idx(A.get_index(), B.get_index(), p);
+            return lp_dist_idx(A, B, p);
         };
 
         // needed for pybind11 to properly copy/move objects
@@ -166,6 +185,13 @@ namespace hypergraph
             simplexes.resize(dim + 1);
         }
         simplexes[dim_].push_back(simplex_);
+    }
+
+    template <typename Simplex_t, typename Point_t, typename T>
+    void Complex<Simplex_t, Point_t, T>::safe_append(const Simplex_t &simplex_)
+    {
+        const std::lock_guard<std::mutex> lock(cmplx_mtx);
+        append(simplex_);
     }
 
     template <typename Simplex_t, typename Point_t, typename T>
@@ -241,7 +267,7 @@ namespace hypergraph
     }
 
     template <typename Simplex_t, typename T>
-    ComplexFromMatrix<Simplex_t, T>::ComplexFromMatrix(ComplexFromMatrix<Simplex_t, T> &&other) : Complex<Simplex_t, PointIndex<T>, T>::Complex(std::move(other))
+    ComplexFromMatrix<Simplex_t, T>::ComplexFromMatrix(ComplexFromMatrix<Simplex_t, T> &&other) : Complex<Simplex_t, size_t, T>::Complex(std::move(other))
     {
         py::print("Matrix move");
         N = other.N;
@@ -255,7 +281,7 @@ namespace hypergraph
     {
         if (this == &other)
             return *this;
-        Complex<Simplex_t, PointIndex<T>, T>::operator=(std::move(other));
+        Complex<Simplex_t, size_t, T>::operator=(std::move(other));
         N = other.N;
         M = other.M;
         if (dist_ptr != nullptr)
@@ -266,7 +292,7 @@ namespace hypergraph
     }
 
     template <typename Simplex_t, typename T>
-    ComplexFromMatrix<Simplex_t, T>::ComplexFromMatrix(const ComplexFromMatrix<Simplex_t, T> &other) : Complex<Simplex_t, PointIndex<T>, T>::Complex(other)
+    ComplexFromMatrix<Simplex_t, T>::ComplexFromMatrix(const ComplexFromMatrix<Simplex_t, T> &other) : Complex<Simplex_t, size_t, T>::Complex(other)
     {
         N = other.N;
         M = other.M;
@@ -282,7 +308,7 @@ namespace hypergraph
     {
         if (this == &other)
             return *this;
-        Complex<Simplex_t, PointIndex<T>, T>::operator=(other);
+        Complex<Simplex_t, size_t, T>::operator=(other);
         N = other.N;
         M = other.M;
         if (dist_ptr != nullptr)

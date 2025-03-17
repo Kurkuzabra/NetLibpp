@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <type_traits>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -144,13 +145,13 @@ namespace hypergraph
             return points;
         }
 
-        T get_volume(std::function<T(const Point_t&, const Point_t&)>);
+        T get_volume(std::function<T(const Point_t &, const Point_t &)>);
         // get volume from distance matrix
         T get_volume();
         // get volume from vector coordinates
 
-        std::vector<Point_t> projection_impl(const Point_t&, T&);
-        std::vector<Point_t> projection(const Point_t&);
+        std::vector<Point_t> projection_impl(const Point_t &, T &);
+        std::vector<Point_t> projection(const Point_t &);
         // projection \pi_p of any point in R^d to a simplex (its convex hull)
         // projection points can be multiple (think of a point equidistant to all edges of a triangle!)
         // finding and returning projection point(s?)
@@ -162,98 +163,38 @@ namespace hypergraph
     };
 
     template <typename Point_t, typename T>
-    std::vector<Point_t> Simplex<Point_t, T>::projection_impl(const Point_t& point, T& d_nearest)
+    std::vector<Point_t> Simplex<Point_t, T>::projection_impl(const Point_t &point, T &d_nearest)
     {
-        if (dim < points[0].size())
+        if constexpr (std::is_same<Point_t, size_t>::value)
         {
-            size_t M = points.size();
-            quadprogpp::Matrix<T> CE = quadprogpp::Matrix<T>(1.0, M, 1);
-            quadprogpp::Matrix<T> CI = quadprogpp::Matrix<T>(0.0, M, M);
-            quadprogpp::Matrix<T> G_ = quadprogpp::Matrix<T>(points[0].size(), M);
-            quadprogpp::Matrix<T> G = quadprogpp::Matrix<T>(M, M);
-            quadprogpp::Vector<T> g0(0.0, M);
-            quadprogpp::Vector<T> ce0(-1.0, 1);
-            quadprogpp::Vector<T> ci0(0.0, M);
-            for (size_t i = 0; i < M; i++)
-            {
-                for (size_t j = 0; j < points[i].size(); j++)
-                {
-                    G_[j][i] = points[i][j] - point[j];
-                }
-            }
-            for (size_t i = 0; i < M; i++)
-            {
-                CI[i][i] = 1.0;
-            }
-            detail::ATA(G_, G);
-            quadprogpp::Vector<T> x_ = quadprogpp::Vector<T>(M);
-            T result = quadprogpp::solve_quadprog(G, g0, CE, ce0, CI, ci0, x_);
-            x_ = quadprogpp::dot_prod(G_, x_);
-            Point_t x = Point_t(points[0].size());
-            for (size_t i = 0; i < x_.size(); i++)
-            {
-                x[i] = point[i] + x_[i];
-            }
-            if (result == std::numeric_limits<T>::infinity())
-                throw std::logic_error("Could not find a projection");
-            d_nearest = point.distance(x);
-            return std::vector<Point_t>(1, x);
+            throw std::logic_error("this type of point has no size() method");
         }
-        else if (dim == points[0].size())
+        else
         {
-            size_t M = points.size() - 1;
-            quadprogpp::Matrix<T> CE = quadprogpp::Matrix<T>(1.0, M, 1);
-            quadprogpp::Matrix<T> CI = quadprogpp::Matrix<T>(0.0, M, M);
-            quadprogpp::Matrix<T> G_ = quadprogpp::Matrix<T>(points[0].size(), M);
-            quadprogpp::Matrix<T> G = quadprogpp::Matrix<T>(M, M);
-            quadprogpp::Vector<T> g0(0.0, M);
-            quadprogpp::Vector<T> ce0(-1.0, 1);
-            quadprogpp::Vector<T> ci0(0.0, M);
-            quadprogpp::Vector<T> swap_vec(points[0].size());
-            std::vector<Point_t> projections(0);
-            for (size_t i = 0; i < M; i++)
+            if (dim < points[0].size())
             {
-                for (size_t j = 0; j < points[i].size(); j++)
+                size_t M = points.size();
+                quadprogpp::Matrix<T> CE = quadprogpp::Matrix<T>(1.0, M, 1);
+                quadprogpp::Matrix<T> CI = quadprogpp::Matrix<T>(0.0, M, M);
+                quadprogpp::Matrix<T> G_ = quadprogpp::Matrix<T>(points[0].size(), M);
+                quadprogpp::Matrix<T> G = quadprogpp::Matrix<T>(M, M);
+                quadprogpp::Vector<T> g0(0.0, M);
+                quadprogpp::Vector<T> ce0(-1.0, 1);
+                quadprogpp::Vector<T> ci0(0.0, M);
+                for (size_t i = 0; i < M; i++)
                 {
-                    G_[j][i] = points[i][j] - point[j];
-                }
-            }
-            for (size_t i = 0; i < M; i++)
-            {
-                CI[i][i] = 1.0;
-            }
-            for (size_t i = 0; i < swap_vec.size(); i++)
-            {
-                swap_vec[i] = points[M][i] - point[i];
-            }
-            for (size_t k = 0; k <= M; k++)
-            {
-                std::cout << "cycle" << std::endl;
-                
-                for (int i = 0; i < G_.nrows(); i++)
-                {
-                    for (int j = 0; j < G_.ncols(); j++)
+                    for (size_t j = 0; j < points[i].size(); j++)
                     {
-                        std::cout << std::fixed << G_[i][j] << " ";
+                        G_[j][i] = points[i][j] - point[j];
                     }
-                    std::cout << std::endl;
                 }
-                std::cout << std::endl;
-                // for (int i = 0; i < CI.nrows(); i++)
-                // {
-                //     for (int j = 0; j < CI.ncols(); j++)
-                //     {
-                //         std::cout << std::fixed << CI[i][j] << " ";
-                //     }
-                //     std::cout << std::endl;
-                // }
-                // std::cout << std::endl;
-
+                for (size_t i = 0; i < M; i++)
+                {
+                    CI[i][i] = 1.0;
+                }
                 detail::ATA(G_, G);
                 quadprogpp::Vector<T> x_ = quadprogpp::Vector<T>(M);
-                quadprogpp::Vector<T> _g0(g0);
-                quadprogpp::Matrix<T> _G(G);
-                T result = quadprogpp::solve_quadprog(_G, _g0, CE, ce0, CI, ci0, x_);
+                T result = quadprogpp::solve_quadprog(G, g0, CE, ce0, CI, ci0, x_);
                 x_ = quadprogpp::dot_prod(G_, x_);
                 Point_t x = Point_t(points[0].size());
                 for (size_t i = 0; i < x_.size(); i++)
@@ -262,51 +203,118 @@ namespace hypergraph
                 }
                 if (result == std::numeric_limits<T>::infinity())
                     throw std::logic_error("Could not find a projection");
-
-                for (int i = 0; i < x.size(); i++)
-                {
-                    std::cout << std::fixed << x[i] << " ";
-                }
-                std::cout << std::endl;
-
-                if (projections.size() == 0)
-                {
-                    projections.push_back(x);
-                    d_nearest = point.distance(x);
-                }
-                else
-                {
-                    T d_x = point.distance(x);
-                    if (d_x + EPS < d_nearest)
-                    {
-                        projections.resize(0);
-                        projections.push_back(x);
-                        d_nearest = d_x;
-                    }
-                    else if (d_x < d_nearest + EPS)
-                    {
-                        projections.push_back(x);
-                        d_nearest = std::min(d_nearest, d_x);
-                    }
-                }
-                if (k != M)
-                {
-                    for (size_t i = 0; i < swap_vec.size(); i++)
-                    {
-                        std::swap(G_[i][k], swap_vec[i]);
-                    }
-                }
+                d_nearest = point.distance(x);
+                return std::vector<Point_t>(1, x);
             }
-            return projections;
-        }
-        else
-        {
-            throw std::logic_error("Can only find projections to convex forms");
+            else if (dim == points[0].size())
+            {
+                size_t M = points.size() - 1;
+                quadprogpp::Matrix<T> CE = quadprogpp::Matrix<T>(1.0, M, 1);
+                quadprogpp::Matrix<T> CI = quadprogpp::Matrix<T>(0.0, M, M);
+                quadprogpp::Matrix<T> G_ = quadprogpp::Matrix<T>(points[0].size(), M);
+                quadprogpp::Matrix<T> G = quadprogpp::Matrix<T>(M, M);
+                quadprogpp::Vector<T> g0(0.0, M);
+                quadprogpp::Vector<T> ce0(-1.0, 1);
+                quadprogpp::Vector<T> ci0(0.0, M);
+                quadprogpp::Vector<T> swap_vec(points[0].size());
+                std::vector<Point_t> projections(0);
+                for (size_t i = 0; i < M; i++)
+                {
+                    for (size_t j = 0; j < points[i].size(); j++)
+                    {
+                        G_[j][i] = points[i][j] - point[j];
+                    }
+                }
+                for (size_t i = 0; i < M; i++)
+                {
+                    CI[i][i] = 1.0;
+                }
+                for (size_t i = 0; i < swap_vec.size(); i++)
+                {
+                    swap_vec[i] = points[M][i] - point[i];
+                }
+                for (size_t k = 0; k <= M; k++)
+                {
+                    std::cout << "cycle" << std::endl;
+
+                    for (int i = 0; i < G_.nrows(); i++)
+                    {
+                        for (int j = 0; j < G_.ncols(); j++)
+                        {
+                            std::cout << std::fixed << G_[i][j] << " ";
+                        }
+                        std::cout << std::endl;
+                    }
+                    std::cout << std::endl;
+                    // for (int i = 0; i < CI.nrows(); i++)
+                    // {
+                    //     for (int j = 0; j < CI.ncols(); j++)
+                    //     {
+                    //         std::cout << std::fixed << CI[i][j] << " ";
+                    //     }
+                    //     std::cout << std::endl;
+                    // }
+                    // std::cout << std::endl;
+
+                    detail::ATA(G_, G);
+                    quadprogpp::Vector<T> x_ = quadprogpp::Vector<T>(M);
+                    quadprogpp::Vector<T> _g0(g0);
+                    quadprogpp::Matrix<T> _G(G);
+                    T result = quadprogpp::solve_quadprog(_G, _g0, CE, ce0, CI, ci0, x_);
+                    x_ = quadprogpp::dot_prod(G_, x_);
+                    Point_t x = Point_t(points[0].size());
+                    for (size_t i = 0; i < x_.size(); i++)
+                    {
+                        x[i] = point[i] + x_[i];
+                    }
+                    if (result == std::numeric_limits<T>::infinity())
+                        throw std::logic_error("Could not find a projection");
+
+                    for (int i = 0; i < x.size(); i++)
+                    {
+                        std::cout << std::fixed << x[i] << " ";
+                    }
+                    std::cout << std::endl;
+
+                    if (projections.size() == 0)
+                    {
+                        projections.push_back(x);
+                        d_nearest = point.distance(x);
+                    }
+                    else
+                    {
+                        T d_x = point.distance(x);
+                        if (d_x + EPS < d_nearest)
+                        {
+                            projections.resize(0);
+                            projections.push_back(x);
+                            d_nearest = d_x;
+                        }
+                        else if (d_x < d_nearest + EPS)
+                        {
+                            projections.push_back(x);
+                            d_nearest = std::min(d_nearest, d_x);
+                        }
+                    }
+                    if (k != M)
+                    {
+                        for (size_t i = 0; i < swap_vec.size(); i++)
+                        {
+                            std::swap(G_[i][k], swap_vec[i]);
+                        }
+                    }
+                }
+                return projections;
+            }
+            else
+            {
+                throw std::logic_error("Can only find projections to convex forms");
+            }
         }
     }
 
     template <typename Point_t, typename T>
-    T Simplex<Point_t, T>::get_volume(std::function<T(const Point_t&, const Point_t&)> distance)
+    T Simplex<Point_t, T>::get_volume(std::function<T(const Point_t &, const Point_t &)> distance)
     {
         if (volume.has_value())
         {

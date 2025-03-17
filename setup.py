@@ -9,7 +9,7 @@ import pybind11
 # Define the C++ extension
 ext_modules = [
     Extension(
-        "netlibpp.netlibpp",
+        "netlibpp_cpy",
         sources=["netlibpp/src/include/graph_func.cpp"],
         include_dirs=[pybind11.get_include()],
         language="c++",

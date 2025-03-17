@@ -90,18 +90,3 @@ bool find_comb(int n, int k, int_type index_to_find, std::vector<int>& results )
 
 	return true;
 };
-
-int main()
-{
-    std::vector<int> t(3);
-    for (int j = 0; j < 100; j++)
-    {
-        std::iota(t.begin(), t.end(), 0);
-        if (find_comb(6, 3, j, t)) std::cout << "found\n";
-        for (int i = 0; i < t.size(); i++)
-        {
-            std::cout << t[i] << " ";
-        }
-        std::cout << std::endl;
-    }
-}

@@ -107,6 +107,10 @@ public:
     }
     bool next()
     {
+        if (_global_offset > _seq_size)
+        {
+            return false;
+        }
         _offset[_global_offset - 1]++;
         int i = _global_offset - 1;
         while (_offset[i] >= _seq_size && i > 0)

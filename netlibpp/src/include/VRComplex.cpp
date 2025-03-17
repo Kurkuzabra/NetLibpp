@@ -21,21 +21,21 @@ namespace hypergraph
 {
 
 template <template<typename, typename> typename Derived, typename T>
-struct VRComplexFromMatrix : public Derived<Simplex<PointIndex<T>, T>, T>
+struct VRComplexFromMatrix : public Derived<Simplex<size_t, T>, T>
 {
-    T volume_of(Simplex<PointIndex<T>, T> simplex)
+    T volume_of(Simplex<size_t, T> simplex)
     {
         return simplex.get_volume(this->dist);
     }
 
     void add_cofaces
     (
-        const std::vector<std::vector<size_t>>& N_lower, std::vector<PointIndex<T>> tau,
+        const std::vector<std::vector<size_t>>& N_lower, std::vector<size_t> tau,
         std::vector<size_t> clique_vertexes, size_t next, size_t max_dim
     )
     {
-        tau.push_back(PointIndex<T>(next));
-        this->append(Simplex<PointIndex<T>, T>(tau));
+        tau.push_back(size_t(next));
+        this->append(Simplex<size_t, T>(tau));
         if (tau.size() >= max_dim) return;
         for (size_t i = 0; i < clique_vertexes.size(); i++)
         {
@@ -57,7 +57,7 @@ struct VRComplexFromMatrix : public Derived<Simplex<PointIndex<T>, T>, T>
         }
     }
 
-    VRComplexFromMatrix(const py::array_t<T>& A, T min_dist, size_t max_dim_) : Derived<Simplex<PointIndex<T>, T>, T>(A)
+    VRComplexFromMatrix(const py::array_t<T>& A, T min_dist, size_t max_dim_) : Derived<Simplex<size_t, T>, T>(A)
     {
         std::vector<std::vector<size_t>> N_lower(this->N, std::vector<size_t>(0));
         for (size_t i = 0; i < this->N; i++)
@@ -73,7 +73,7 @@ struct VRComplexFromMatrix : public Derived<Simplex<PointIndex<T>, T>, T>
 
         for (size_t i = 0; i < this->N; i++)
         {
-            std::vector<PointIndex<T>> tau = std::vector<PointIndex<T>>(0);
+            std::vector<size_t> tau = std::vector<size_t>(0);
             add_cofaces(N_lower, tau, N_lower[i], i, max_dim_);
         }
         py::print(this->N, this->M);
@@ -88,27 +88,27 @@ struct VRComplexFromMatrix : public Derived<Simplex<PointIndex<T>, T>, T>
             for (size_t j = 0; j < this->simplexes[i].size(); j++)
             {
                 indexes[i].push_back(std::vector<size_t>(0));
-                std::vector<PointIndex<T>> vec = this->simplexes[i][j];
+                std::vector<size_t> vec = this->simplexes[i][j];
                 for (size_t k = 0; k < vec.size(); k++)
                 {
-                    indexes[i][j].push_back(vec[k].index);
+                    indexes[i][j].push_back(vec[k]);
                 }
             }
         }
         return py::cast(indexes);
-        // return py::cast(Complex<Simplex<PointIndex<T>, T>, PointIndex<T>, T>::simplexes);
+        // return py::cast(Complex<Simplex<size_t, T>, size_t, T>::simplexes);
     }
 
-    VRComplexFromMatrix(const VRComplexFromMatrix& other) : Derived<Simplex<PointIndex<T>, T>, T>(other) {}
-    VRComplexFromMatrix(const VRComplexFromMatrix&& other) : Derived<Simplex<PointIndex<T>, T>, T>(std::move(other)) {}
+    VRComplexFromMatrix(const VRComplexFromMatrix& other) : Derived<Simplex<size_t, T>, T>(other) {}
+    VRComplexFromMatrix(const VRComplexFromMatrix&& other) : Derived<Simplex<size_t, T>, T>(std::move(other)) {}
     VRComplexFromMatrix& operator=(const VRComplexFromMatrix& other)
     {
-        Derived<Simplex<PointIndex<T>, T>, T>::operator=(other);
+        Derived<Simplex<size_t, T>, T>::operator=(other);
         return *this;
     }
     VRComplexFromMatrix& operator=(const VRComplexFromMatrix&& other)
     {
-        Derived<Simplex<PointIndex<T>, T>, T>::operator=(std::move(other));
+        Derived<Simplex<size_t, T>, T>::operator=(std::move(other));
         return *this;
     }
 

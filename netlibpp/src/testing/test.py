@@ -40,5 +40,5 @@ ts = gf.filtrate(A, 3, [1, 2], num_cores)
 qs = gf.filtrate(A, 4, [1, 2], num_cores)
 end = timer()
 print("c++ ver time on {} threads: {}".format(num_cores, end - start))
-
+print(ts)
 ###########################################

@@ -59,8 +59,8 @@ struct PointIndex
     size_t index;
 
     PointIndex() {}
-    PointIndex(size_t index_) : index(index_) {}
-    const size_t& get_index() const
+    PointIndex(const size_t& index_) : index(index_) {}
+    inline const size_t& get_index() const
     {
         return index;
     }
