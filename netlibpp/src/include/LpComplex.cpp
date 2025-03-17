@@ -30,7 +30,7 @@ namespace hypergraph
     {
     private:
         template <typename T_>
-        T d(T_ &simplex_ptr, std::vector<int> &perm, double& p)
+        T d(const T_ &simplex_ptr, const std::vector<int> &perm, const double& p)
         {
             Subsequences subs = Subsequences(perm.size(), 2);
             T ds = std::numeric_limits<T>::min();
