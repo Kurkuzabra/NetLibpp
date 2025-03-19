@@ -21,10 +21,17 @@ ext_modules = [
 
 setup(
     name="netlibpp",
-    version="0.0.3",
+    # version="0.0.3",
 
     packages=["netlibpp"],
     ext_modules=ext_modules,
     install_requires=[],
     python_requires=">=3.6",
+    package_data={
+        'netlibpp': ['*.pyi'],
+    },
+    exclude_package_data={
+        "": ["*.c", "*.cpp", "*.h", "*.hpp"],
+    },
+    include_package_data=True,
 )

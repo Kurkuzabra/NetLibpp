@@ -201,7 +201,7 @@ namespace quadprogpp
             d[i] = 0.0;
         }
 
-        print_matrix("G^-1", J);
+        // print_matrix("G^-1", J);
 
         /* c1 * c2 is an estimate for cond(G) */
 
@@ -664,7 +664,7 @@ namespace quadprogpp
                     {
                         std::ostringstream os;
                         // raise error
-                        print_matrix("A", A);
+                        // print_matrix("A", A);
                         os << "Error in cholesky decomposition, sum: " << sum;
                         throw std::logic_error(os.str());
                         exit(-1);
@@ -677,7 +677,7 @@ namespace quadprogpp
             for (k = i + 1; k < n; k++)
                 A[i][k] = A[k][i];
         }
-        print_matrix("A", A);
+        // print_matrix("A", A);
     }
 
     template <typename T>

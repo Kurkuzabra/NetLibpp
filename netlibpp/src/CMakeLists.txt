@@ -19,7 +19,7 @@ find_package(Python3 COMPONENTS Interpreter NumPy)
 
 SET(SOURCE_LIB graph_func.cpp)
 SET(CMAKE_CXX_STANDARD 23 CACHE STRING "C++ version selection")
-SET(CMAKE_CXX_FLAGS_INIT "-lpthread -shared -std=c++20 -O4 -fPIC $(python3 -m pybind11 --includes)")
+SET(CMAKE_CXX_FLAGS_INIT "-lpthread -shared -std=c++20 -O4 -fPIC $(python3 -m pybind11 --includes) -ferror-limit=100")
 
 IF (APPLE)
     EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE)

@@ -115,6 +115,8 @@ namespace detail
 namespace hypergraph
 {
 
+
+
     template <typename Point_t, typename T>
     struct Simplex
     {
@@ -127,6 +129,7 @@ namespace hypergraph
         std::optional<T> volume;
         std::optional<T> filter;
 
+        Simplex(const std::vector<Point_t> &&points_) : points(points_), dim(points_.size() - 1) {}
         Simplex(const std::vector<Point_t> &points_) : points(points_), dim(points_.size() - 1) {}
         Simplex(size_t dim_) : dim(dim_ - 1), points(std::vector<Point_t>(dim_)) {}
         Simplex() : dim(0), points(std::vector<Point_t>(0)) {}
@@ -136,11 +139,19 @@ namespace hypergraph
         {
             return dim;
         }
+        const std::optional<T>& get_volume_() const
+        {
+            return volume;
+        }
+        const std::optional<T>& get_filter_() const
+        {
+            return filter;
+        }
         size_t size() const
         {
             return points.size();
         }
-        operator std::vector<Point_t>()
+        explicit operator std::vector<Point_t>&()
         {
             return points;
         }
@@ -160,6 +171,20 @@ namespace hypergraph
         T distance(const Point_t &point);
         // distance of any point in R^d to a simplex (its convex hull)
         // computing the distance between a point and its projection to a simplex
+
+        template<typename Points_t>
+        inline void set_vectors(const Points_t& pts, const size_t& n, const size_t& m)
+        {
+            // requires Point_t not PointIndex
+            points = std::vector<Point_t>(n, Point_t(m));
+            for (size_t i = 0; i < n; i++)
+            {
+                for (size_t j = 0; j < m; j++)
+                {
+                    points[i][j] = pts[i][j];
+                }
+            }
+        }
     };
 
     template <typename Point_t, typename T>

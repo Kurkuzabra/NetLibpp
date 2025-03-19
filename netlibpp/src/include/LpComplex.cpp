@@ -188,7 +188,8 @@ namespace hypergraph
                 for (size_t j = 0; j < this->simplexes[i].size(); j++)
                 {
                     indexes[i].push_back(std::vector<size_t>(0));
-                    std::vector<size_t> vec = this->simplexes[i][j];
+                    std::vector<size_t>& vec = static_cast<std::vector<size_t>&>(this->simplexes[i][j]);
+                    // std::vector<size_t>& vec = this->simplexes[i][j].get_points();
                     for (size_t k = 0; k < vec.size(); k++)
                     {
                         indexes[i][j].push_back(vec[k]);

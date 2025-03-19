@@ -43,7 +43,7 @@ struct Point
     {
         return coordinates.size();
     }
-    operator std::vector<T>()
+    explicit operator std::vector<T>&()
     {
         return coordinates;
     }
