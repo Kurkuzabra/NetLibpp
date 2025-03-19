@@ -410,7 +410,14 @@ namespace hypergraph
     template <typename Point_t, typename T>
     T Simplex<Point_t, T>::distance(const Point_t &point)
     {
+        if constexpr (std::is_same<Point_t, size_t>::value)
+        {
+            throw std::logic_error("this type of point has no size() method");
+        }
+        else
+        {
         return point.distance(projection(point)[0]);
+        }
     }
 
 }

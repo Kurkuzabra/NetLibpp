@@ -239,9 +239,8 @@ hg::Simplex<hg::Point<T>, T> get_Simplex_by_points(const py::array_t<T> &points_
         py::class_<hg::Simplex<Type1, Type2>>(Module, STRCAT(STRCAT("Simplex_", TOSTRING(Type1)), TOSTRING(Type2))) \
             .def(py::init<hg::Simplex<Type1, Type2>>())                                                             \
             .def("dim", &hg::Simplex<Type1, Type2>::get_dim)                                                        \
-            .def("projection", &hg::Simplex<Type1, Type2>::projection);                                             \
-        .def("distance", &hg::Simplex<Type1, Type2>::distance);                                                     \
-        .def("volume", &hg::Simplex<Type1, Type2>::get_volume);                                                     \
+            .def("projection", &hg::Simplex<Type1, Type2>::projection)                                              \
+            .def("distance", &hg::Simplex<Type1, Type2>::distance);                                             \
     }
 
 #define declare_VRComplexFromDistMatrix(Module, Type)                                                                                    \
