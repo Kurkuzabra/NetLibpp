@@ -31,7 +31,7 @@ setup(
         'netlibpp': ['*.pyi'],
     },
     exclude_package_data={
-        "": ["*.c", "*.cpp", "*.h", "*.hpp"],
+        "": ["*.c", "*.cpp", "*.h", "*.hpp", "*.cc", "*.hh", "*.o"],
     },
     include_package_data=True,
 )

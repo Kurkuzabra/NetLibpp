@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netlibpp"
-version = "0.0.5"
+version = "0.0.6"
 description = "A sample Python lib"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -29,10 +29,10 @@ classifiers = [
   "Programming Language :: Python :: 3",
   # "Programming Language :: Python :: 3.9",
   # "Programming Language :: Python :: 3.10",
-  # "Programming Language :: Python :: 3.11",
-  # "Programming Language :: Python :: 3.12",
-  # "Programming Language :: Python :: 3.13",
-  # "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3 :: Only",
 ]
 
 # This field lists other packages that your project depends on to run.
