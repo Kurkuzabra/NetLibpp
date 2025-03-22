@@ -7,6 +7,7 @@
 #include <thread>
 #include <mutex>
 #include "Point_t.cpp"
+#include "Simplex_t.cpp"
 
 #ifndef PYBIND11_INCLUDE
 #define PYBIND11_INCLUDE
@@ -28,6 +29,7 @@ namespace hypergraph
     {
     protected:
         std::mutex cmplx_mtx;
+
     public:
         size_t dim;
         // dimension of a complex (the largest dimension of a simplex in a complex)
@@ -36,8 +38,8 @@ namespace hypergraph
         // simplexes[simplexse.size() - 1] is always an empty vector
 
         Complex() : simplexes(std::vector<std::vector<Simplex_t>>(1)), dim(0) {}
-        Complex(const Complex& cplx) : simplexes(cplx.simplexes), dim(cplx.dim) {}
-        Complex(Complex&& cplx) : simplexes(std::move(cplx.simplexes)), dim(cplx.dim) {}
+        Complex(const Complex &cplx) : simplexes(cplx.simplexes), dim(cplx.dim) {}
+        Complex(Complex &&cplx) : simplexes(std::move(cplx.simplexes)), dim(cplx.dim) {}
         Complex &operator=(const Complex &cplx)
         {
             simplexes = cplx.simplexes;
@@ -71,6 +73,11 @@ namespace hypergraph
         // distance of any point in R^d to a complex (its convex hull)
         // defined as the (all) minimum distances to a complex's simplices
         // computing the distance(s) between a point and its projection to a simplex
+
+        py::list as_list()
+        {
+            return py::cast(simplexes);
+        }
     };
 
     template <typename Simplex_t, typename T>
@@ -80,9 +87,28 @@ namespace hypergraph
         size_t N;
         size_t M;
 
-        inline T* from_idx(const size_t& i)
+        inline T *from_idx(const size_t &i)
         {
             return dist_ptr + i * M;
+        }
+
+        py::list as_index_list()
+        {
+            std::vector<std::vector<std::vector<size_t>>> indexes;
+            for (size_t i = 0; i < this->simplexes.size(); i++)
+            {
+                indexes.push_back(std::vector<std::vector<size_t>>(0));
+                for (size_t j = 0; j < this->simplexes[i].size(); j++)
+                {
+                    indexes[i].push_back(std::vector<size_t>(0));
+                    std::vector<size_t> &vec = static_cast<std::vector<size_t> &>(this->simplexes[i][j]);
+                    for (size_t k = 0; k < vec.size(); k++)
+                    {
+                        indexes[i][j].push_back(vec[k]);
+                    }
+                }
+            }
+            return py::cast(indexes);
         }
 
         ComplexFromMatrix() : dist_ptr(nullptr), N(0), M(0) {}
@@ -108,6 +134,11 @@ namespace hypergraph
         {
             return dist_idx(A, B);
         };
+
+        T volume_of(Simplex<size_t, T> simplex)
+        {
+            return simplex.get_volume(this->dist);
+        }
 
         // needed for pybind11 to properly copy/move objects
         ComplexFromDistMatrix(const py::array_t<T> &A) : ComplexFromMatrix<Simplex_t, T>(A) {}
@@ -163,25 +194,72 @@ namespace hypergraph
             return lp_dist_idx(A, B, p);
         };
 
-        py::list as_points_list()
+        Simplex<Point<T>, T> simplex_from_indexes(Simplex_t& splx)
         {
-            std::vector<std::vector<Simplex_t>> indexes;
+            const std::vector<size_t> &vec = static_cast<const std::vector<size_t> &>(splx);
+            std::vector<T *> vec_(vec.size());
+            for (size_t k = 0; k < vec.size(); k++)
+            {
+                vec_[k] = this->from_idx(vec[k]);
+            }
+            Simplex<Point<T>, T> pt_splx{};
+            pt_splx.dim = splx.get_dim();
+            pt_splx.volume = splx.get_volume_();
+            pt_splx.filter = splx.get_filter_();
+            pt_splx.set_vectors(vec_, vec_.size(), this->M);
+            return pt_splx;
+        }
+
+        py::list as_simplex_list()
+        {
+            std::vector<std::vector<Simplex<Point<T>, T>>> indexes(this->simplexes.size());
             for (size_t i = 0; i < this->simplexes.size(); i++)
             {
-                indexes.push_back(std::vector<Simplex_t>(0));
                 for (size_t j = 0; j < this->simplexes[i].size(); j++)
                 {
-                    indexes[i].push_back(Simplex_t());
-                    std::vector<size_t>& vec = this->simplexes[i][j];
-                    std::vector<T>& p_vec(vec.size());
+                    // indexes[i].push_back(Simplex<std::vector<T>, T>(0));
+                    const std::vector<size_t> &vec = static_cast<const std::vector<size_t> &>(this->simplexes[i][j]);
+                    std::vector<T *> vec_(vec.size());
                     for (size_t k = 0; k < vec.size(); k++)
                     {
-                        indexes[i][j].push_back(vec[k]);
+                        vec_[k] = this->from_idx(vec[k]);
                     }
+                    Simplex<Point<T>, T> splx{};
+                    splx.dim = this->simplexes[i][j].get_dim();
+                    splx.volume = this->simplexes[i][j].get_volume_();
+                    splx.filter = this->simplexes[i][j].get_filter_();
+                    splx.set_vectors(vec_, vec_.size(), this->M);
+                    indexes[i].push_back(std::move(splx));
                 }
             }
+
             return py::cast(indexes);
         }
+
+        T volume_of(Simplex<size_t, T> simplex)
+        {
+            return simplex.get_volume(this->dist);
+        }
+
+        // py::list as_points_list()
+        // {
+        //     std::vector<std::vector<Simplex_t>> indexes;
+        //     for (size_t i = 0; i < this->simplexes.size(); i++)
+        //     {
+        //         indexes.push_back(std::vector<Simplex_t>(0));
+        //         for (size_t j = 0; j < this->simplexes[i].size(); j++)
+        //         {
+        //             indexes[i].push_back(Simplex_t());
+        //             std::vector<size_t>& vec = this->simplexes[i][j];
+        //             std::vector<T>& p_vec(vec.size());
+        //             for (size_t k = 0; k < vec.size(); k++)
+        //             {
+        //                 indexes[i][j].push_back(vec[k]);
+        //             }
+        //         }
+        //     }
+        //     return py::cast(indexes);
+        // }
 
         // needed for pybind11 to properly copy/move objects
         ComplexFromCoordMatrix(const py::array_t<T> &A) : ComplexFromMatrix<Simplex_t, T>(A) {}

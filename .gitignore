@@ -1,7 +1,7 @@
 build
-testing/graph_func.cpython-312-x86_64-linux-gnu.so
+testing/netlibpp_cpy.cpython-312-x86_64-linux-gnu.so
 venv
 wheelhouse
 .vscode
 archive
-netlibpp/src/testing/graph_func.cpython-312-x86_64-linux-gnu.so
+netlibpp/src/testing/netlibpp_cpy.cpython-312-x86_64-linux-gnu.so

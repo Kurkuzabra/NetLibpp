@@ -7,7 +7,7 @@ from timeit import default_timer as timer
 import sys
 sys.path.insert(0, '/home/kurk/curse/filtration/graph_func.cpython-312-x86_64-linux-gnu.so')
 
-import graph_func as gf
+import netlibpp_cpy as gf
 import importlib
 importlib.reload(gf)
 from timeit import default_timer as timer

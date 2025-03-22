@@ -178,28 +178,7 @@ namespace hypergraph
                 }
             }
         }
-
-        py::list as_list()
-        {
-            std::vector<std::vector<std::vector<size_t>>> indexes;
-            for (size_t i = 0; i < this->simplexes.size(); i++)
-            {
-                indexes.push_back(std::vector<std::vector<size_t>>(0));
-                for (size_t j = 0; j < this->simplexes[i].size(); j++)
-                {
-                    indexes[i].push_back(std::vector<size_t>(0));
-                    std::vector<size_t>& vec = static_cast<std::vector<size_t>&>(this->simplexes[i][j]);
-                    // std::vector<size_t>& vec = this->simplexes[i][j].get_points();
-                    for (size_t k = 0; k < vec.size(); k++)
-                    {
-                        indexes[i][j].push_back(vec[k]);
-                    }
-                }
-            }
-            return py::cast(indexes);
-            // return py::cast(Complex<Simplex<size_t, T>, size_t, T>::simplexes);
-        }
-
+        
         LpComplexFromMatrix(const LpComplexFromMatrix &other) : Derived<Simplex<size_t, T>, T>(other) {}
         LpComplexFromMatrix(const LpComplexFromMatrix &&other) : Derived<Simplex<size_t, T>, T>(std::move(other)) {}
         LpComplexFromMatrix &operator=(const LpComplexFromMatrix &other)
