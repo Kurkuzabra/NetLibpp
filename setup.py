@@ -7,7 +7,7 @@ from setuptools.command.build_ext import build_ext
 import pybind11
 
 
-base_compile_args = ["-lpthread", "-shared", "-std=c++2a", "-O4", "-fPIC"]
+base_compile_args = ["-lpthread", "fopenmp", "-shared", "-std=c++2a", "-O4", "-fPIC"]
 compile_args = {
     'win32': [],
     'linux': [],
