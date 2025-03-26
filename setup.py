@@ -16,7 +16,7 @@ def get_brew_path(lib_name):
 
 base_compile_args = ["-lpthread", "-shared", "-std=c++2a", "-O4", "-fPIC"]
 compile_args = {
-    'win32': [],
+    'win32': ['-fopenmp'],
     'linux': ['-fopenmp'],
     'darwin': [] 
 }
