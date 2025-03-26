@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <limits>
+#include <omp.h>
+
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -67,12 +69,12 @@ struct VRComplexFromMatrix : public Derived<Simplex<size_t, T>, T>
             }
         }
 
+        #pragma omp parallel for
         for (size_t i = 0; i < this->N; i++)
         {
             std::vector<size_t> tau = std::vector<size_t>(0);
             add_cofaces(N_lower, tau, N_lower[i], i, max_dim_);
         }
-        py::print(this->N, this->M);
     }
 
     VRComplexFromMatrix(const VRComplexFromMatrix& other) : Derived<Simplex<size_t, T>, T>(other) {}

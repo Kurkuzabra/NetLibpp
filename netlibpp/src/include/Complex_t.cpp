@@ -241,26 +241,6 @@ namespace hypergraph
             return simplex.get_volume(this->dist);
         }
 
-        // py::list as_points_list()
-        // {
-        //     std::vector<std::vector<Simplex_t>> indexes;
-        //     for (size_t i = 0; i < this->simplexes.size(); i++)
-        //     {
-        //         indexes.push_back(std::vector<Simplex_t>(0));
-        //         for (size_t j = 0; j < this->simplexes[i].size(); j++)
-        //         {
-        //             indexes[i].push_back(Simplex_t());
-        //             std::vector<size_t>& vec = this->simplexes[i][j];
-        //             std::vector<T>& p_vec(vec.size());
-        //             for (size_t k = 0; k < vec.size(); k++)
-        //             {
-        //                 indexes[i][j].push_back(vec[k]);
-        //             }
-        //         }
-        //     }
-        //     return py::cast(indexes);
-        // }
-
         // needed for pybind11 to properly copy/move objects
         ComplexFromCoordMatrix(const py::array_t<T> &A) : ComplexFromMatrix<Simplex_t, T>(A) {}
         ComplexFromCoordMatrix(const ComplexFromCoordMatrix &other) : ComplexFromMatrix<Simplex_t, T>(other) {}

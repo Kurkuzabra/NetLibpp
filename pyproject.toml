@@ -1,15 +1,15 @@
 
 [build-system]
-requires = ["setuptools<72.2", "wheel", "pybind11>=2.6.0", "cmake>=3.20"] 
+requires = ["setuptools<72.2", "wheel", "pybind11>=2.6.0"] 
 build-backend = "setuptools.build_meta"
 
 
 [project]
 name = "netlibpp"
-version = "0.0.6"
+version = "0.0.7"
 description = "A sample Python lib"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 keywords = ["sample", "setuptools", "development"]
 
 
@@ -35,42 +35,11 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
 ]
 
-# This field lists other packages that your project depends on to run.
-# Any package you put here will be installed by pip when your project is
-# installed, so they must be valid existing projects.
-#
-# For an analysis of this field vs pip's requirements files see:
-# https://packaging.python.org/discussions/install-requires-vs-requirements/
-# dependencies = ["peppercorn"]
 
-# List additional groups of dependencies here (e.g. development
-# dependencies). Users will be able to install these using the "extras"
-# syntax, for example:
-#
-#   $ pip install sampleproject[dev]
-#
-# Optional dependencies the project provides. These are commonly
-# referred to as "extras". For a more extensive definition see:
-# https://packaging.python.org/en/latest/specifications/dependency-specifiers/#extras
 [project.optional-dependencies]
 dev = ["check-manifest"]
-# test = ["coverage"]
 
-# List URLs that are relevant to your project
-#
-# This field corresponds to the "Project-URL" and "Home-Page" metadata fields:
-# https://packaging.python.org/specifications/core-metadata/#project-url-multiple-use
-# https://packaging.python.org/specifications/core-metadata/#home-page-optional
-#
-# Examples listed include a pattern for specifying where the package tracks
-# issues, where the source is hosted, where to say thanks to the package
-# maintainers, and where to support the project financially. The key is
-# what's used to render the link text on PyPI.
 [project.urls]
-"Homepage" = "https://github.com/Kurkuzabra/NetLibpp/blob/develop/include/graph_func.cpp"
-"Bug Reports" = "https://github.com/Kurkuzabra/NetLibpp/blob/develop/include/graph_func.cpp"
-"Funding" = "https://github.com/Kurkuzabra/NetLibpp/blob/develop/include/graph_func.cpp"
-"Say Thanks!" = "https://github.com/Kurkuzabra/NetLibpp/blob/develop/include/graph_func.cpp"
 "Source" = "https://github.com/Kurkuzabra/NetLibpp/blob/develop/include/graph_func.cpp"
 
 
@@ -99,8 +68,8 @@ musllinux-armv7l-image = "musllinux_1_2"
 # archs = ["x86_64", "aarch64"]
 archs = ["x86_64"]
 
-# Build for Windows (win32 and win_amd64)
-# windows = { archs = ["win32", "win_amd64"] }
+[tool.cibuildwheel.windows]
+archs = ["win_amd64"]
 
-# Build for macOS (x86_64 and arm64)
-# macos = { archs = ["x86_64", "arm64"] }
+[tool.cibuildwheel.macos]
+archs = ["arm64"]
