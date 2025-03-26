@@ -25,7 +25,7 @@ base_link_args = ["-std=c++2a", "-lpthread"]
 link_args = {
     'win32': [],
     'linux': [],
-    'darwin': ['-l omp']
+    'darwin': []
 }
 
 # Choose args based on the current platform
