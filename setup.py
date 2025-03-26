@@ -7,18 +7,18 @@ from setuptools.command.build_ext import build_ext
 import pybind11
 
 
-base_compile_args = ["-lpthread", "-fopenmp", "-shared", "-std=c++2a", "-O4", "-fPIC"]
+base_compile_args = ["-lpthread", "-shared", "-std=c++2a", "-O4", "-fPIC"]
 compile_args = {
     'win32': [],
     'linux': [],
-    'darwin': ['-I $(brew --prefix libomp)/include', '-L $(brew --prefix libomp)/lib'] 
+    'darwin': ['-I $(brew --prefix libomp)/include'] 
 }
 
 base_link_args = ["-std=c++2a", "-lpthread"]
 link_args = {
     'win32': [],
     'linux': [],
-    'darwin': []
+    'darwin': ['-L $(brew --prefix libomp)/lib', '-l omp']
 }
 
 # Choose args based on the current platform
