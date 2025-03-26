@@ -73,4 +73,5 @@ archs = ["win_amd64"]
 
 [tool.cibuildwheel.macos]
 archs = ["arm64"]
+environment = "MACOSX_DEPLOYMENT_TARGET=14.0"
 before-build = "brew install libomp"
