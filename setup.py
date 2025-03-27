@@ -24,7 +24,7 @@ compile_args = {
 base_link_args = []
 link_args = {
     'win32': ["-lstdc++", "-shared"],
-    'linux': ["-lpthread"],
+    'linux': ["-lpthread", "-fopenmp"],
     'darwin': ["-lpthread"]
 }
 
