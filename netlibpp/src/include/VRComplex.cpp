@@ -69,8 +69,14 @@ struct VRComplexFromMatrix : public Derived<Simplex<size_t, T>, T>
             }
         }
 
+        // 'i': index variable in OpenMP 'for' statement must have signed integral type
+
         #pragma omp parallel for
+        #ifndef _WIN32
         for (size_t i = 0; i < this->N; i++)
+        #else
+        for (int i = 0; i < this->N; i++)
+        #endif
         {
             std::vector<size_t> tau = std::vector<size_t>(0);
             add_cofaces(N_lower, tau, N_lower[i], i, max_dim_);
