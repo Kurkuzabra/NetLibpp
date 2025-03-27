@@ -93,6 +93,7 @@ double f_single_thread_(double *A_ptr, int A_sz, std::vector<int> simplex, doubl
     return fs;
 }
 
+#ifndef _WIN32
 void f_multithread_part_(
     std::vector<std::vector<double>> &result, double *A_ptr, int A_sz, double *p_ptr, int p_sz, std::vector<int> &beg_comb,
     long long start_offset, long long tasks, std::binary_semaphore &smphSignalThreadToMain, std::counting_semaphore<MAX_SEM_VAL> &free_sem)
@@ -113,6 +114,7 @@ void f_multithread_part_(
     } while (comb.next() && i < tasks);
     free_sem.release();
 }
+#endif
 
 py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const py::array_t<double> &p, int num_threads = 1)
 {
@@ -130,7 +132,11 @@ py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const
     }
     Combinations comb(A_sz, simplex_sz);
     long long i = 0;
+    #ifndef _WIN32
     if (num_threads == 1)
+    #else
+    if (true)
+    #endif
     {
         do
         {
@@ -142,6 +148,7 @@ py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const
             i++;
         } while (comb.next());
     }
+    #ifndef _WIN32
     else
     {
         std::binary_semaphore smphSignalThreadToMain{0};
@@ -170,6 +177,7 @@ py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const
             free_sem.acquire();
         }
     }
+    #endif
     return py::array_t<double>(py::cast(std::ref(result)));
 }
 

@@ -22,6 +22,8 @@
 
 #define LP_VR_CMPLX_OPTIM
 
+// for now multithreading here is not supported for win32
+
 namespace hypergraph
 {
 
@@ -109,6 +111,7 @@ namespace hypergraph
             }
         }
 
+        #ifndef _WIN32
         void f_multithread_part_(
             T min_dist, double p, std::vector<int> &beg_comb,
             long long tasks, std::binary_semaphore &smphSignalThreadToMain, std::counting_semaphore<MAX_SEM_VAL> &free_sem)
@@ -124,6 +127,7 @@ namespace hypergraph
             } while (comb.next() && i < tasks);
             free_sem.release();
         }
+        #endif
 
     public:
         LpComplexFromMatrix(const py::array_t<T> &A, T min_dist, double p, size_t max_dim_) : Derived<Simplex<size_t, T>, T>(A)
@@ -143,14 +147,20 @@ namespace hypergraph
                 int64_t total_comb;
                 Combinations comb(this->N, simplex_sz);
                 compute_total_comb(this->N, simplex_sz, total_comb);
+                #ifndef _WIN32
                 if (num_threads == 1 || total_comb < num_threads)
+                #else
+                if (true)
+                #endif
                 {
+
                     do
                     {
                         const std::vector<int> &simplex = comb.get_comb();
                         f_single_thread_<true>(simplex, min_dist, p);
                     } while (comb.next());
                 }
+                #ifndef _WIN32
                 else
                 {
                     std::binary_semaphore smphSignalThreadToMain{0};
@@ -176,6 +186,7 @@ namespace hypergraph
                         free_sem.acquire();
                     }
                 }
+                #endif
             }
         }
         

@@ -25,7 +25,7 @@ base_link_args = []
 link_args = {
     'win32': ["-lstdc++", "-shared"],
     'linux': ["-lpthread"],
-    'darwin': ["-lpthread"]
+    'darwin': ["-lpthread", "-shared"]
 }
 
 # Choose args based on the current platform
