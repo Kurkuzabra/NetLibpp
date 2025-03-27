@@ -16,7 +16,7 @@ def get_brew_path(lib_name):
 
 base_compile_args = ["-O4"]
 compile_args = {
-    'win32': ["-fopenmp", "-std=c++20"],
+    'win32': ["/O2", "/openmp", "/std:c++20"],
     'linux': ["-fopenmp", "-std=c++2a", "-fPIC"],
     'darwin': ["-std=c++2a", "-fPIC"] 
 }
@@ -25,7 +25,7 @@ base_link_args = []
 link_args = {
     'win32': ["-lstdc++", "-shared"],
     'linux': ["-lpthread"],
-    'darwin': ["-lpthread", "-shared"]
+    'darwin': ["-lpthread"]
 }
 
 # Choose args based on the current platform
