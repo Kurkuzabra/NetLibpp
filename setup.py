@@ -14,11 +14,11 @@ def get_brew_path(lib_name):
     except subprocess.CalledProcessError:
         return None
 
-base_compile_args = ["-O4", "-fPIC"]
+base_compile_args = ["-O4"]
 compile_args = {
-    'win32': ["-fopenmp", "-std=gnu++2a"],
-    'linux': ["-fopenmp", "-std=c++2a"],
-    'darwin': ["-std=c++2a"] 
+    'win32': ["-fopenmp", "-std=c++20"],
+    'linux': ["-fopenmp", "-std=c++2a", "-fPIC"],
+    'darwin': ["-std=c++2a", "-fPIC"] 
 }
 
 base_link_args = []
