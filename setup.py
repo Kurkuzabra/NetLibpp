@@ -21,9 +21,9 @@ compile_args = {
     'darwin': ["-std=c++2a"] 
 }
 
-base_link_args = ["-shared"]
+base_link_args = []
 link_args = {
-    'win32': ["-lstdc++"],
+    'win32': ["-lstdc++", "-shared"],
     'linux': ["-lpthread"],
     'darwin': ["-lpthread"]
 }
