@@ -132,11 +132,11 @@ py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const
     }
     Combinations comb(A_sz, simplex_sz);
     long long i = 0;
-    #ifndef _WIN32
+    // #ifndef _WIN32
     if (num_threads == 1)
-    #else
+    // #else
     if (true)
-    #endif
+    // #endif
     {
         do
         {
@@ -148,7 +148,7 @@ py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const
             i++;
         } while (comb.next());
     }
-    #ifndef _WIN32
+    // #ifndef _WIN32
     else
     {
         std::binary_semaphore smphSignalThreadToMain{0};
@@ -177,7 +177,7 @@ py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const
             free_sem.acquire();
         }
     }
-    #endif
+    // #endif
     return py::array_t<double>(py::cast(std::ref(result)));
 }
 
