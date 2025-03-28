@@ -187,6 +187,8 @@ namespace hypergraph
         }
     };
 
+    // unstable for non-full-rank matricies 
+    // todo: add Regularization (Tikhonov / Ridge Regression)
     template <typename Point_t, typename T>
     std::vector<Point_t> Simplex<Point_t, T>::projection_impl(const Point_t &point, T &d_nearest)
     {

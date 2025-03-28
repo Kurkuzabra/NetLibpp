@@ -16,9 +16,14 @@ def get_brew_path(lib_name):
 
 base_compile_args = ["-O4"]
 compile_args = {
-    'win32': ["/O2", "/openmp", "/std:c++20"],
+    # eigen s0ubmodule ver
+    # 'win32': ["/O2", "/openmp", "/std:c++20", "/I" + os.path.abspath('netlibpp/src/extern/eigen')],
+    # 'linux': ["-fopenmp", "-std=c++2a", "-fPIC", "-I" + os.path.abspath('netlibpp/src/extern/eigen')],
+    # 'darwin': ["-std=c++2a", "-fPIC", "-I" + os.path.abspath('netlibpp/src/extern/eigen')] 
+
+    'win32': ["/O2", "/openmp", "/std:c++20", "/MD"],
     'linux': ["-fopenmp", "-std=c++2a", "-fPIC"],
-    'darwin': ["-std=c++2a", "-fPIC"] 
+    'darwin': ["-std=c++2a", "-fPIC", "-I"] 
 }
 
 base_link_args = []
@@ -39,7 +44,7 @@ if current_platform == 'darwin':
     if omp_include and omp_lib:
         extra_compile_args.extend([
             f'-I{omp_include}',  # Headers
-            '-Xpreprocessor',     # Required for Clang + OpenMP
+            '-Xpreprocessor',    # Required for Clang + OpenMP
             '-fopenmp'           # Enables OpenMP
         ])
         extra_link_args.extend([
@@ -54,7 +59,9 @@ ext_modules = [
     Extension(
         name="netlibpp_cpy",
         sources=["netlibpp/src/include/graph_func.cpp"],
-        include_dirs=[pybind11.get_include()],
+        include_dirs=[
+            pybind11.get_include(),
+        ],
         language="c++",
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args
