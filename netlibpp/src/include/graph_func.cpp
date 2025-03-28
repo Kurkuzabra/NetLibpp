@@ -93,7 +93,7 @@ double f_single_thread_(double *A_ptr, int A_sz, std::vector<int> simplex, doubl
     return fs;
 }
 
-#ifndef _WIN32
+// #ifndef _WIN32
 void f_multithread_part_(
     std::vector<std::vector<double>> &result, double *A_ptr, int A_sz, double *p_ptr, int p_sz, std::vector<int> &beg_comb,
     long long start_offset, long long tasks, std::binary_semaphore &smphSignalThreadToMain, std::counting_semaphore<MAX_SEM_VAL> &free_sem)
@@ -114,7 +114,7 @@ void f_multithread_part_(
     } while (comb.next() && i < tasks);
     free_sem.release();
 }
-#endif
+// #endif
 
 py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const py::array_t<double> &p, int num_threads = 1)
 {
