@@ -135,9 +135,9 @@ py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const
     // #ifndef _WIN32
     if (num_threads == 1)
     // #else
-    if (true)
+    // if (true)
     // #endif
-    {
+    { 
         do
         {
             const std::vector<int> &simplex = comb.get_comb();
