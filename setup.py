@@ -23,7 +23,7 @@ compile_args = {
 
     'win32': ["/O2", "/openmp", "/std:c++20", "/MD"],
     'linux': ["-fopenmp", "-std=c++2a", "-fPIC"],
-    'darwin': ["-std=c++2a", "-fPIC", "-I"] 
+    'darwin': ["-std=c++2a", "-fPIC"] 
 }
 
 base_link_args = []

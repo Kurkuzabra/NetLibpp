@@ -16,6 +16,7 @@
 #include "quadprog/QuadProg++.cpp"
 #include "linalg/gramSchmidt.cpp"
 #include "linalg/linalg.cpp"
+#include "util/matrix.cpp"
 
 #define EPS 0.001
 
@@ -115,16 +116,40 @@ namespace detail
 namespace hypergraph
 {
 
+    enum class PointsType : int
+    {
+        DIST_PTR,
+        POINT_PTR,
+        POINT
+    };
+    /*
+    for 
+        dist matrix
+        points matrix
+        points
+    */
 
-
-    template <typename Point_t, typename T>
+    template <typename Point_t, typename T, PointsType PT>
     struct Simplex
     {
-    private:
         // Point_t projection_impl(Point_t point, std::vector<size_t> pts_ord, size_t start_offset);
 
-    public:
-        size_t dim; // dimension of a simplex
+        std::conditional_t<std::is_same_v<Point_t, size_t>, mtr::Matrix<T>*, std::monostate> matr_ptr;
+
+        T size_t_points_dist(size_t i, size_t j)
+        {
+            T dist = 0;
+            for (size_t k = 0; k < matr_ptr->M; k++)
+            {
+                dist += pow(matr_ptr->dist_ptr[points[i] * matr_ptr->M + k], 2) - pow(matr_ptr->dist_ptr[points[j] * matr_ptr->M + k], 2);
+            }
+            return sqrt(dist);
+        }
+
+        //
+    
+        size_t dim;     // dimension of a simplex
+        size_t sp_size; //
         std::vector<Point_t> points;
         std::optional<T> volume;
         std::optional<T> filter;
@@ -139,11 +164,11 @@ namespace hypergraph
         {
             return dim;
         }
-        const std::optional<T>& get_volume_() const
+        const std::optional<T> &get_volume_() const
         {
             return volume;
         }
-        const std::optional<T>& get_filter_() const
+        const std::optional<T> &get_filter_() const
         {
             return filter;
         }
@@ -151,12 +176,12 @@ namespace hypergraph
         {
             return points.size();
         }
-        explicit operator std::vector<Point_t>&()
+        explicit operator std::vector<Point_t> &()
         {
             return points;
         }
 
-        T get_volume(std::function<T(const Point_t &, const Point_t &)>);
+        // T get_volume(std::function<T(const Point_t &, const Point_t &)>);
         // get volume from distance matrix
         T get_volume();
         // get volume from vector coordinates
@@ -172,8 +197,8 @@ namespace hypergraph
         // distance of any point in R^d to a simplex (its convex hull)
         // computing the distance between a point and its projection to a simplex
 
-        template<typename Points_t>
-        inline void set_vectors(const Points_t& pts, const size_t& n, const size_t& m)
+        template <typename Points_t>
+        inline void set_vectors(const Points_t &pts, const size_t &n, const size_t &m)
         {
             // requires Point_t not PointIndex
             points = std::vector<Point_t>(n, Point_t(m));
@@ -187,10 +212,10 @@ namespace hypergraph
         }
     };
 
-    // unstable for non-full-rank matricies 
+    // unstable for non-full-rank matricies
     // todo: add Regularization (Tikhonov / Ridge Regression)
-    template <typename Point_t, typename T>
-    std::vector<Point_t> Simplex<Point_t, T>::projection_impl(const Point_t &point, T &d_nearest)
+    template <typename Point_t, typename T, PointsType PT>
+    std::vector<Point_t> Simplex<Point_t, T, PT>::projection_impl(const Point_t &point, T &d_nearest)
     {
         if constexpr (std::is_same<Point_t, size_t>::value)
         {
@@ -340,8 +365,8 @@ namespace hypergraph
         }
     }
 
-    template <typename Point_t, typename T>
-    T Simplex<Point_t, T>::get_volume(std::function<T(const Point_t &, const Point_t &)> distance)
+    template <typename Point_t, typename T, PointsType PT>
+    T Simplex<Point_t, T, PT>::get_volume()
     {
         if (volume.has_value())
         {
@@ -355,7 +380,18 @@ namespace hypergraph
             {
                 for (size_t j = i + 1; j < dim + 1; j++)
                 {
-                    matrix[i * (mx_size) + j] = pow(distance(points[i], points[j]), 2.0);
+                    if constexpr (PT == PointsType::POINT_PTR)
+                    {
+                        matrix[i * (mx_size) + j] = size_t_points_dist(i, j);
+                    }
+                    else if constexpr (PT == PointsType::DIST_PTR)
+                    {
+                        matrix[i * (mx_size) + j] = matr_ptr->dist_ptr[i * matr_ptr->M + j];
+                    }
+                    else
+                    {
+                        matrix[i * (mx_size) + j] = pow(points[i].distance(points[j]), 2.0);
+                    }
                     matrix[j * (mx_size) + i] = matrix[i * (mx_size) + j];
                 }
             }
@@ -370,47 +406,17 @@ namespace hypergraph
             return volume.value();
         }
     }
+    
 
-    template <typename Point_t, typename T>
-    T Simplex<Point_t, T>::get_volume()
-    {
-        if (volume.has_value())
-        {
-            return volume.value();
-        }
-        else
-        {
-            size_t mx_size = dim + 2;
-            T *matrix = new T[(mx_size) * (mx_size)];
-            for (size_t i = 0; i < dim + 1; i++)
-            {
-                for (size_t j = i + 1; j < dim + 1; j++)
-                {
-                    matrix[i * (mx_size) + j] = pow(points[i].distance(points[j]), 2.0);
-                    matrix[j * (mx_size) + i] = matrix[i * (mx_size) + j];
-                }
-            }
-            for (size_t i = 0; i < mx_size; i++)
-                matrix[i * (mx_size) + i] = 0.0f;
-            for (size_t i = 0; i < dim + 1; i++)
-                matrix[i * (mx_size) + dim + 1] = 1.0f;
-            for (size_t i = 0; i < dim + 1; i++)
-                matrix[(dim + 1) * (mx_size) + i] = 1.0f;
-            volume = std::sqrt(fabs(determinant(matrix, mx_size)) / (T)std::pow(detail::factorial(dim), 2) / (T)std::pow(2, dim));
-            delete[] matrix;
-            return volume.value();
-        }
-    }
-
-    template <typename Point_t, typename T>
-    std::vector<Point_t> Simplex<Point_t, T>::projection(const Point_t &point)
+    template <typename Point_t, typename T, PointsType PT>
+    std::vector<Point_t> Simplex<Point_t, T, PT>::projection(const Point_t &point)
     {
         T dist_ = 0.0;
         return projection_impl(point, dist_);
     }
 
-    template <typename Point_t, typename T>
-    T Simplex<Point_t, T>::distance(const Point_t &point)
+    template <typename Point_t, typename T, PointsType PT>
+    T Simplex<Point_t, T, PT>::distance(const Point_t &point)
     {
         if constexpr (std::is_same<Point_t, size_t>::value)
         {
@@ -418,7 +424,7 @@ namespace hypergraph
         }
         else
         {
-        return point.distance(projection(point)[0]);
+            return point.distance(projection(point)[0]);
         }
     }
 

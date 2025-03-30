@@ -22,8 +22,8 @@ namespace py = pybind11;
 namespace hypergraph
 {
 
-template <template<typename, typename> typename Derived, typename T>
-struct VRComplexFromMatrix : public Derived<Simplex<size_t, T>, T>
+template <template<typename, typename> typename Derived, typename T, PointsType PT>
+struct VRComplexFromMatrix : public Derived<Simplex<size_t, T, PT>, T>
 {
 
     void add_cofaces
@@ -33,7 +33,7 @@ struct VRComplexFromMatrix : public Derived<Simplex<size_t, T>, T>
     )
     {
         tau.push_back(size_t(next));
-        this->append(Simplex<size_t, T>(tau));
+        this->append(Simplex<size_t, T, PT>(tau));
         if (tau.size() >= max_dim) return;
         for (size_t i = 0; i < clique_vertexes.size(); i++)
         {
@@ -55,7 +55,7 @@ struct VRComplexFromMatrix : public Derived<Simplex<size_t, T>, T>
         }
     }
 
-    VRComplexFromMatrix(const py::array_t<T>& A, T min_dist, size_t max_dim_) : Derived<Simplex<size_t, T>, T>(A)
+    VRComplexFromMatrix(const py::array_t<T>& A, T min_dist, size_t max_dim_) : Derived<Simplex<size_t, T, PT>, T>(A)
     {
         std::vector<std::vector<size_t>> N_lower(this->N, std::vector<size_t>(0));
         for (size_t i = 0; i < this->N; i++)
@@ -83,16 +83,16 @@ struct VRComplexFromMatrix : public Derived<Simplex<size_t, T>, T>
         }
     }
 
-    VRComplexFromMatrix(const VRComplexFromMatrix& other) : Derived<Simplex<size_t, T>, T>(other) {}
-    VRComplexFromMatrix(const VRComplexFromMatrix&& other) : Derived<Simplex<size_t, T>, T>(std::move(other)) {}
+    VRComplexFromMatrix(const VRComplexFromMatrix& other) : Derived<Simplex<size_t, T, PT>, T>(other) {}
+    VRComplexFromMatrix(const VRComplexFromMatrix&& other) : Derived<Simplex<size_t, T, PT>, T>(std::move(other)) {}
     VRComplexFromMatrix& operator=(const VRComplexFromMatrix& other)
     {
-        Derived<Simplex<size_t, T>, T>::operator=(other);
+        Derived<Simplex<size_t, T, PT>, T>::operator=(other);
         return *this;
     }
     VRComplexFromMatrix& operator=(const VRComplexFromMatrix&& other)
     {
-        Derived<Simplex<size_t, T>, T>::operator=(std::move(other));
+        Derived<Simplex<size_t, T, PT>, T>::operator=(std::move(other));
         return *this;
     }
 

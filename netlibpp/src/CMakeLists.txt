@@ -13,9 +13,6 @@ project(libnet_module)
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(Python3 COMPONENTS Interpreter NumPy)
-# 
-
-add_subdirectory(extern/eigen)
 
 # target_link_libraries(main PRIVATE Eigen3::Eigen)
 
@@ -31,6 +28,5 @@ IF (APPLE)
 ENDIF()
 
 pybind11_add_module(netlibpp_cpy include/graph_func.cpp)
-target_link_libraries(netlibpp_cpy PUBLIC Eigen3::Eigen)
 set_target_properties(netlibpp_cpy PROPERTIES RUNTIME_OUTPUT_DIRECTORY "../")
 set_target_properties(netlibpp_cpy PROPERTIES LIBRARY_OUTPUT_DIRECTORY "../")

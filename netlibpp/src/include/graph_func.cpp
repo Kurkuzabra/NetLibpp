@@ -93,7 +93,6 @@ double f_single_thread_(double *A_ptr, int A_sz, std::vector<int> simplex, doubl
     return fs;
 }
 
-// #ifndef _WIN32
 void f_multithread_part_(
     std::vector<std::vector<double>> &result, double *A_ptr, int A_sz, double *p_ptr, int p_sz, std::vector<int> &beg_comb,
     long long start_offset, long long tasks, std::binary_semaphore &smphSignalThreadToMain, std::counting_semaphore<MAX_SEM_VAL> &free_sem)
@@ -114,7 +113,6 @@ void f_multithread_part_(
     } while (comb.next() && i < tasks);
     free_sem.release();
 }
-// #endif
 
 py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const py::array_t<double> &p, int num_threads = 1)
 {
@@ -132,12 +130,8 @@ py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const
     }
     Combinations comb(A_sz, simplex_sz);
     long long i = 0;
-    // #ifndef _WIN32
     if (num_threads == 1)
-    // #else
-    // if (true)
-    // #endif
-    { 
+    {
         do
         {
             const std::vector<int> &simplex = comb.get_comb();
@@ -148,7 +142,6 @@ py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const
             i++;
         } while (comb.next());
     }
-    // #ifndef _WIN32
     else
     {
         std::binary_semaphore smphSignalThreadToMain{0};
@@ -177,26 +170,28 @@ py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const
             free_sem.acquire();
         }
     }
-    // #endif
     return py::array_t<double>(py::cast(std::ref(result)));
 }
 
 template <typename T>
-std::unique_ptr<hg::VRComplexFromMatrix<hg::ComplexFromDistMatrix, T>> get_VR_from_dist_matrix(const py::array_t<T> &A, T min_dist, size_t sz)
+std::unique_ptr<hg::VRComplexFromMatrix<hg::ComplexFromDistMatrix, T, hg::PointsType::DIST_PTR>> get_VR_from_dist_matrix(const py::array_t<T> &A, T min_dist, size_t sz)
 {
-    return std::unique_ptr<hg::VRComplexFromMatrix<hg::ComplexFromDistMatrix, T>>(new hg::VRComplexFromMatrix<hg::ComplexFromDistMatrix, T>(A, min_dist, sz));
+    return std::unique_ptr<hg::VRComplexFromMatrix<hg::ComplexFromDistMatrix, T, hg::PointsType::DIST_PTR>>(
+        new hg::VRComplexFromMatrix<hg::ComplexFromDistMatrix, T, hg::PointsType::DIST_PTR>(A, min_dist, sz));
 }
 
 template <typename T>
-std::unique_ptr<hg::VRComplexFromMatrix<hg::ComplexFromCoordMatrix, T>> get_VR_from_coord_matrix(const py::array_t<T> &A, T min_dist, size_t sz)
+std::unique_ptr<hg::VRComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>> get_VR_from_coord_matrix(const py::array_t<T> &A, T min_dist, size_t sz)
 {
-    return std::unique_ptr<hg::VRComplexFromMatrix<hg::ComplexFromCoordMatrix, T>>(new hg::VRComplexFromMatrix<hg::ComplexFromCoordMatrix, T>(A, min_dist, sz));
+    return std::unique_ptr<hg::VRComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>>(
+        new hg::VRComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>(A, min_dist, sz));
 }
 
 template <typename T>
-std::unique_ptr<hg::LpComplexFromMatrix<hg::ComplexFromCoordMatrix, T>> get_Lp_complex(const py::array_t<T> &A, T min_dist, double p, size_t sz)
+std::unique_ptr<hg::LpComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>> get_Lp_complex(const py::array_t<T> &A, T min_dist, double p, size_t sz)
 {
-    return std::unique_ptr<hg::LpComplexFromMatrix<hg::ComplexFromCoordMatrix, T>>(new hg::LpComplexFromMatrix<hg::ComplexFromCoordMatrix, T>(A, min_dist, p, sz));
+    return std::unique_ptr<hg::LpComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>>(
+        new hg::LpComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>(A, min_dist, p, sz));
 }
 
 template <typename T>
@@ -214,7 +209,7 @@ hg::Point<T> getPoint(const py::array_t<T> &A)
 }
 
 template <typename T>
-hg::Simplex<hg::Point<T>, T> get_Simplex_by_points(const py::array_t<T> &points_)
+hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const py::array_t<T> &points_)
 {
     py::buffer_info A_arr = points_.request();
     T *A_ptr = static_cast<T *>(A_arr.ptr);
@@ -228,7 +223,7 @@ hg::Simplex<hg::Point<T>, T> get_Simplex_by_points(const py::array_t<T> &points_
             points[i][j] = A_ptr[i * M + j];
         }
     }
-    return hg::Simplex<hg::Point<T>, T>(points);
+    return hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT>(points);
 }
 
 #define VAL(str) #str
@@ -242,57 +237,63 @@ hg::Simplex<hg::Point<T>, T> get_Simplex_by_points(const py::array_t<T> &points_
             .def("coords", &hg::Point<Type>::operator std::vector<Type> &);   \
     }
 
-#define declare_Simplex(Module, Type1, Type2)                                                                       \
-    {                                                                                                               \
-        py::class_<hg::Simplex<Type1, Type2>>(Module, STRCAT(STRCAT("Simplex_", TOSTRING(Type1)), TOSTRING(Type2))) \
-            .def(py::init<hg::Simplex<Type1, Type2>>())                                                             \
-            .def("dim", &hg::Simplex<Type1, Type2>::get_dim)                                                        \
-            .def("projection", &hg::Simplex<Type1, Type2>::projection)                                              \
-            .def("distance", &hg::Simplex<Type1, Type2>::distance);                                                 \
+#define declare_Simplex(Module, Type1, Type2, Type3)                                                                                                \
+    {                                                                                                                                               \
+        py::class_<hg::Simplex<Type1, Type2, Type3>>(Module, STRCAT(STRCAT(STRCAT("Simplex_", TOSTRING(Type1)), TOSTRING(Type2)), TOSTRING(Type3))) \
+            .def(py::init<hg::Simplex<Type1, Type2, Type3>>())                                                                                      \
+            .def("dim", &hg::Simplex<Type1, Type2, Type3>::get_dim)                                                                                 \
+            .def("projection", &hg::Simplex<Type1, Type2, Type3>::projection)                                                                       \
+            .def("get_volume", &hg::Simplex<Type1, Type2, Type3>::get_volume)                                                                       \
+            .def("distance", &hg::Simplex<Type1, Type2, Type3>::distance);                                                                          \
     }
 
-#define declare_VRComplexFromDistMatrix(Module, Type)                                                                                    \
-    {                                                                                                                                    \
-        py::class_<hg::VRComplexFromMatrix<hg::ComplexFromDistMatrix, Type>>(Module, STRCAT("VRComplexFromDistMatrix_", TOSTRING(Type))) \
-            .def(py::init<const py::array_t<Type> &, Type, size_t>())                                                                    \
-            .def("volume_of", &hg::VRComplexFromMatrix<hg::ComplexFromDistMatrix, Type>::volume_of)                                      \
-            .def("as_list", &hg::Complex<hg::Simplex<size_t, Type>, size_t, Type>::as_list)                                              \
-            .def("as_index_list", &hg::ComplexFromMatrix<hg::Simplex<size_t, Type>, Type>::as_index_list)                                \
-            .def("filtration", &hg::Complex<hg::Simplex<size_t, Type>, size_t, Type>::filtration)                                        \
-            .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type>, size_t, Type>::skeleton);                                           \
+#define declare_Simplex_for_all_point_types(Module, Type1, Type2)            \
+    {                                                                        \
+        declare_Simplex(Module, Type1, Type2, hg::PointsType::DIST_PTR)      \
+            declare_Simplex(Module, Type1, Type2, hg::PointsType::POINT_PTR) \
+                declare_Simplex(Module, Type1, Type2, hg::PointsType::POINT)}
+
+#define declare_VRComplexFromDistMatrix(Module, Type)                                                                                                              \
+    {                                                                                                                                                              \
+        py::class_<hg::VRComplexFromMatrix<hg::ComplexFromDistMatrix, Type, hg::PointsType::DIST_PTR>>(Module, STRCAT("VRComplexFromDistMatrix_", TOSTRING(Type))) \
+            .def(py::init<const py::array_t<Type> &, Type, size_t>())                                                                                              \
+            .def("as_list", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::as_list)                                              \
+            .def("as_index_list", &hg::ComplexFromMatrix<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, Type>::as_index_list)                                \
+            .def("filtration", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::filtration)                                        \
+            .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::skeleton);                                           \
     }
 
-#define declare_VRComplexFromCoordMatrix(Module, Type)                                                                                     \
-    {                                                                                                                                      \
-        py::class_<hg::VRComplexFromMatrix<hg::ComplexFromCoordMatrix, Type>>(Module, STRCAT("VRComplexFromCoordMatrix_", TOSTRING(Type))) \
-            .def(py::init<const py::array_t<Type> &, Type, size_t>())                                                                      \
-            .def("volume_of", &hg::VRComplexFromMatrix<hg::ComplexFromCoordMatrix, Type>::volume_of)                                       \
-            .def("as_list", &hg::Complex<hg::Simplex<size_t, Type>, size_t, Type>::as_list)                                                \
-            .def("as_index_list", &hg::ComplexFromMatrix<hg::Simplex<size_t, Type>, Type>::as_index_list)                                  \
-            .def("as_simplex_list", &hg::VRComplexFromMatrix<hg::ComplexFromCoordMatrix, Type>::as_simplex_list)                           \
-            .def("filtration", &hg::Complex<hg::Simplex<size_t, Type>, size_t, Type>::filtration)                                          \
-            .def("simplex_from_indexes", &hg::ComplexFromCoordMatrix<hg::Simplex<size_t, Type>, Type>::simplex_from_indexes)               \
-            .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type>, size_t, Type>::skeleton);                                             \
+#define declare_VRComplexFromCoordMatrix(Module, Type)                                                                                                                \
+    {                                                                                                                                                                 \
+        py::class_<hg::VRComplexFromMatrix<hg::ComplexFromCoordMatrix, Type, hg::PointsType::POINT_PTR>>(Module, STRCAT("VRComplexFromCoordMatrix_", TOSTRING(Type))) \
+            .def(py::init<const py::array_t<Type> &, Type, size_t>())                                                                                                 \
+            .def("as_list", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::as_list)                                                \
+            .def("as_index_list", &hg::ComplexFromMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::as_index_list)                                  \
+            .def("as_simplex_list", &hg::VRComplexFromMatrix<hg::ComplexFromCoordMatrix, Type, hg::PointsType::POINT_PTR>::as_simplex_list)                           \
+            .def("filtration", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::filtration)                                          \
+            .def("simplex_from_indexes", &hg::ComplexFromCoordMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::simplex_from_indexes)               \
+            .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                             \
     }
 
-#define declare_LpComplexFromCoordMatrix(Module, Type)                                                                                     \
-    {                                                                                                                                      \
-        py::class_<hg::LpComplexFromMatrix<hg::ComplexFromCoordMatrix, Type>>(Module, STRCAT("LpComplexFromCoordMatrix_", TOSTRING(Type))) \
-            .def(py::init<const py::array_t<Type> &, Type, double, size_t>())                                                              \
-            .def("as_list", &hg::Complex<hg::Simplex<size_t, Type>, size_t, Type>::as_list)                                                \
-            .def("as_index_list", &hg::ComplexFromMatrix<hg::Simplex<size_t, Type>, Type>::as_index_list)                                  \
-            .def("as_simplex_list", &hg::ComplexFromCoordMatrix<hg::Simplex<size_t, Type>, Type>::as_simplex_list)                         \
-            .def("simplex_from_indexes", &hg::ComplexFromCoordMatrix<hg::Simplex<size_t, Type>, Type>::simplex_from_indexes)               \
-            .def("filtration", &hg::Complex<hg::Simplex<size_t, Type>, size_t, Type>::filtration)                                          \
-            .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type>, size_t, Type>::skeleton);                                             \
+#define declare_LpComplexFromCoordMatrix(Module, Type)                                                                                                                \
+    {                                                                                                                                                                 \
+        py::class_<hg::LpComplexFromMatrix<hg::ComplexFromCoordMatrix, Type, hg::PointsType::POINT_PTR>>(Module, STRCAT("LpComplexFromCoordMatrix_", TOSTRING(Type))) \
+            .def(py::init<const py::array_t<Type> &, Type, double, size_t>())                                                                                         \
+            .def("as_list", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::as_list)                                                \
+            .def("as_index_list", &hg::ComplexFromMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::as_index_list)                                  \
+            .def("as_simplex_list", &hg::LpComplexFromMatrix<hg::ComplexFromCoordMatrix, Type, hg::PointsType::POINT_PTR>::as_simplex_list)                           \
+            .def("filtration", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::filtration)                                          \
+            .def("simplex_from_indexes", &hg::ComplexFromCoordMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::simplex_from_indexes)               \
+            .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                             \
     }
 
-#define declare_VR_complexes(Module, Type)                     \
-    {                                                          \
-        declare_Simplex(Module, size_t, Type)                  \
-            declare_VRComplexFromDistMatrix(Module, Type)      \
-                declare_VRComplexFromCoordMatrix(Module, Type) \
-                    declare_LpComplexFromCoordMatrix(Module, Type)}
+#define declare_VR_complexes(Module, Type)                                   \
+    {                                                                        \
+        declare_Simplex(Module, size_t, Type, hg::PointsType::DIST_PTR)      \
+            declare_Simplex(Module, size_t, Type, hg::PointsType::POINT_PTR) \
+                declare_VRComplexFromDistMatrix(Module, Type)                \
+                    declare_VRComplexFromCoordMatrix(Module, Type)           \
+                        declare_LpComplexFromCoordMatrix(Module, Type)}
 
 PYBIND11_MODULE(netlibpp_cpy, m)
 {
@@ -322,8 +323,10 @@ PYBIND11_MODULE(netlibpp_cpy, m)
             m.def("Point", py::overload_cast<const py::array_t<double> &>(&getPoint<double>), "get Point");
     m.def("Point", py::overload_cast<const py::array_t<float> &>(&getPoint<float>), "get Point");
 
-    declare_Simplex(m, hg::Point<double>, double)
-        declare_Simplex(m, hg::Point<float>, float)
+    // declare_Simplex(m, hg::Point<double>, double)
+    // declare_Simplex(m, hg::Point<float>, float)
+    declare_Simplex(m, hg::Point<double>, double, hg::PointsType::POINT)
+        declare_Simplex(m, hg::Point<float>, float, hg::PointsType::POINT)
             m.def("Simplex", py::overload_cast<const py::array_t<double> &>(&get_Simplex_by_points<double>), "get Simplex");
     m.def("Simplex", py::overload_cast<const py::array_t<float> &>(&get_Simplex_by_points<float>), "get Simplex");
 

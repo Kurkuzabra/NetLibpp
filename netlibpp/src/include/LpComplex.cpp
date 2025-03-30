@@ -22,13 +22,11 @@
 
 #define LP_VR_CMPLX_OPTIM
 
-// for now multithreading here is not supported for win32
-
 namespace hypergraph
 {
 
-    template <template <typename, typename> typename Derived, typename T>
-    struct LpComplexFromMatrix : public Derived<Simplex<size_t, T>, T>
+    template <template <typename, typename> typename Derived, typename T, PointsType PT>
+    struct LpComplexFromMatrix : public Derived<Simplex<size_t, T, PT>, T>
     {
     private:
         template <typename T_>
@@ -102,11 +100,11 @@ namespace hypergraph
                 }
                 if constexpr (actual_single_thread)
                 {
-                    this->append(app_simplex);
+                    this->append(Simplex<size_t, T, PT>(app_simplex));
                 }
                 else
                 {
-                    this->safe_append(app_simplex);
+                    this->safe_append(Simplex<size_t, T, PT>(app_simplex));
                 }
             }
         }
@@ -128,7 +126,7 @@ namespace hypergraph
         }
 
     public:
-        LpComplexFromMatrix(const py::array_t<T> &A, T min_dist, double p, size_t max_dim_) : Derived<Simplex<size_t, T>, T>(A)
+        LpComplexFromMatrix(const py::array_t<T> &A, T min_dist, double p, size_t max_dim_) : Derived<Simplex<size_t, T, PT>, T>(A)
         {
             int num_threads = std::thread::hardware_concurrency();
 
@@ -136,7 +134,7 @@ namespace hypergraph
             for (size_t i = 0; i < this->N; i++)
             {
                 app_simplex[0] = i;
-                this->append(app_simplex);
+                this->append(Simplex<size_t, T, PT>(app_simplex));
             }
 
             for (size_t simplex_sz = 2; simplex_sz <= max_dim_; simplex_sz++)
@@ -182,16 +180,16 @@ namespace hypergraph
             }
         }
         
-        LpComplexFromMatrix(const LpComplexFromMatrix &other) : Derived<Simplex<size_t, T>, T>(other) {}
-        LpComplexFromMatrix(const LpComplexFromMatrix &&other) : Derived<Simplex<size_t, T>, T>(std::move(other)) {}
+        LpComplexFromMatrix(const LpComplexFromMatrix &other) : Derived<Simplex<size_t, T, PT>, T>(other) {}
+        LpComplexFromMatrix(const LpComplexFromMatrix &&other) : Derived<Simplex<size_t, T, PT>, T>(std::move(other)) {}
         LpComplexFromMatrix &operator=(const LpComplexFromMatrix &other)
         {
-            Derived<Simplex<size_t, T>, T>::operator=(other);
+            Derived<Simplex<size_t, T, PT>, T>::operator=(other);
             return *this;
         }
         LpComplexFromMatrix &operator=(const LpComplexFromMatrix &&other)
         {
-            Derived<Simplex<size_t, T>, T>::operator=(std::move(other));
+            Derived<Simplex<size_t, T, PT>, T>::operator=(std::move(other));
             return *this;
         }
     };

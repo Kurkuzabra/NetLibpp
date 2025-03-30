@@ -51,6 +51,14 @@ class Simplex(Generic[Point_t, T]):
         """
         ...
     
+    def get_volume(self) -> T:
+        """
+        Gets volume of simplex in n dimensions. If its matrix is not full-rank, returns 0.
+
+        :returns: volume of simplex
+        """
+        ...
+
     def projection(self, point: Point[T]) -> Point_t:
         """
         Gets the nearest point on Simplex.
@@ -64,7 +72,7 @@ class Simplex(Generic[Point_t, T]):
         """
         ...
 
-    def projection(self, point: Point[T]) -> T:
+    def distance(self, point: Point[T]) -> T:
         """
         Gets distance to the nearest point on Simplex.
             
