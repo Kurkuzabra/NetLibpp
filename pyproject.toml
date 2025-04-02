@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netlibpp"
-version = "0.0.9"
-description = "A sample Python lib"
+version = "0.0.10"
+description = "A geometric Python lib"
 readme = "README.md"
 requires-python = ">=3.12"
 keywords = ["sample", "setuptools", "development"]

@@ -65,15 +65,32 @@ namespace hypergraph
         // a p-skeleton is a subcomplex of a complex with simplices of dimension <= p
         // dimension of a p-skeleton is p
 
-        std::vector<Point_t> projection(const Point_t &point);
+        std::vector<Point<T>> projection(const Point<T> &point);
         // projection \pi_p of any point in R^d to a complex
         // defined as the (all) minimum distance projection to a complex's simplices
         // finding and returning projection point(s)
 
-        T distance(Point_t point);
+        T distance(Point<T> point);
         // distance of any point in R^d to a complex (its convex hull)
         // defined as the (all) minimum distances to a complex's simplices
         // computing the distance(s) between a point and its projection to a simplex
+
+        mtr::Matrix<T> boundary_matrix_(size_t s_dim);
+        py::array_t<T> boundary_matrix(size_t s_dim)
+        {
+            return boundary_matrix_(s_dim).to_py_array();
+        }
+        // computes boundary matrix of s_dim - 1 and s_dim simplexes
+        // boundary_matrix[i][j] = simplexes[s_dim][j].contains(simplexes[s_dim - 1][i])
+
+        mtr::Matrix<T> laplace_matrix_(size_t s_dim);
+        py::array_t<T> laplace_matrix(size_t s_dim)
+        {
+            return laplace_matrix_(s_dim).to_py_array();
+        }
+        // computes laplace matrix of s_dim - 1 and s_dim simplexes
+        // L_[k] = B_[k].T * W_[k] * B_[k] + B_[k+1] * W_[k] * B_[k+1].T
+        // L_[0] = B_[1] * B_[1]^T
 
         py::list as_list()
         {
@@ -226,6 +243,46 @@ namespace hypergraph
         append(simplex_);
     }
 
+    template <typename Simplex_t, typename Point_t, typename T>
+    mtr::Matrix<T> Complex<Simplex_t, Point_t, T>::boundary_matrix_(size_t s_dim)
+    {
+        const size_t n_lng = simplexes[s_dim + 1].size();
+        const size_t n_1_lng = simplexes[s_dim].size();
+        T* b_mx = new T[n_1_lng * n_lng];
+        for (size_t i = 0; i < n_1_lng; i++)
+        {
+            for (size_t j = 0; j < n_lng; j++)
+            {
+                if (simplexes[s_dim + 1][j].contains(simplexes[s_dim][i]))
+                {
+                    b_mx[i * n_lng + j] = 1;
+                }
+                else
+                {
+                    b_mx[i * n_lng + j] = 0;
+                }
+            }
+        }
+        return mtr::Matrix<T>(n_1_lng, n_lng, b_mx);
+    }
+
+    template <typename Simplex_t, typename Point_t, typename T>
+    mtr::Matrix<T> Complex<Simplex_t, Point_t, T>::laplace_matrix_(size_t s_dim)
+    {
+        // L_[k] = B_[k].T * B_[k] + B_[k+1] * B_[k+1].T
+        // L_[0] = B_[1] * B_[1]^T
+        // ??? says 0 but can be computed by normal formula
+        // to be discussed 
+        if (s_dim == 0)
+        {
+            mtr::Matrix<T> B0 = boundary_matrix_(1);
+            return mtr::AAT(B0);
+        }
+        mtr::Matrix<T> B_k = boundary_matrix_(s_dim);
+        mtr::Matrix<T> B_k_1 = boundary_matrix_(s_dim + 1);
+        return mtr::ATA(B_k) + mtr::AAT(B_k_1);
+    }
+
     template <typename Simplex_t, typename T>
     void ComplexFromMatrix<Simplex_t, T>::append(Simplex_t &simplex_)
     {
@@ -273,16 +330,16 @@ namespace hypergraph
     }
 
     template <typename Simplex_t, typename Point_t, typename T>
-    std::vector<Point_t> Complex<Simplex_t, Point_t, T>::projection(const Point_t &point)
+    std::vector<Point<T>> Complex<Simplex_t, Point_t, T>::projection(const Point<T> &point)
     {
-        std::vector<Point_t> res;
+        std::vector<Point<T>> res;
         T n_dist = 0.0;
-        for (size_t i = 0; i < this->simplexes.size(); i++)
+        for (size_t i = 0; i < std::min(this->simplexes.size(), point.coordinates.size() + 1); i++)
         {
             for (size_t j = 0; j < this->simplexes[i].size(); j++)
             {
                 T c_dist = 0.0;
-                std::vector<Point_t> simpl_projs = this->simplexes[i][j].projection_impl(point, c_dist);
+                std::vector<Point<T>> simpl_projs = this->simplexes[i][j].projection_impl(point, c_dist);
                 if (c_dist < n_dist - EPSILON || res.size() == 0)
                 {
                     res = simpl_projs;
@@ -298,10 +355,10 @@ namespace hypergraph
     }
 
     template <typename Simplex_t, typename Point_t, typename T>
-    T Complex<Simplex_t, Point_t, T>::distance(Point_t point)
+    T Complex<Simplex_t, Point_t, T>::distance(Point<T> point)
     {
         T res = std::numeric_limits<T>::max();
-        for (size_t i = 0; i < this->simplexes.size(); i++)
+        for (size_t i = 0; i < std::min(this->simplexes.size(), point.coordinates.size() + 1); i++)
         {
             for (size_t j = 0; j < this->simplexes[i].size(); j++)
             {

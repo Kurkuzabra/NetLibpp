@@ -27,9 +27,6 @@ PYBIND11_MAKE_OPAQUE(std::vector<std::array<double, 3>>)
 namespace py = pybind11;
 namespace hg = hypergraph;
 
-// std::binary_semaphore smphSignalThreadToMain{0};
-// std::counting_semaphore free_sem{0};
-
 template <typename T>
 double d(double *A_ptr, int A_shape, T &simplex_ptr, std::vector<int> &perm, double p)
 {
@@ -244,6 +241,7 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("dim", &hg::Simplex<Type1, Type2, Type3>::get_dim)                                                                                 \
             .def("projection", &hg::Simplex<Type1, Type2, Type3>::projection)                                                                       \
             .def("get_volume", &hg::Simplex<Type1, Type2, Type3>::get_volume)                                                                       \
+            .def("contains", &hg::Simplex<Type1, Type2, Type3>::contains)                                                                           \
             .def("distance", &hg::Simplex<Type1, Type2, Type3>::distance);                                                                          \
     }
 
@@ -260,6 +258,8 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("as_list", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::as_list)                                              \
             .def("as_index_list", &hg::ComplexFromMatrix<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, Type>::as_index_list)                                \
             .def("filtration", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::filtration)                                        \
+            .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::boundary_matrix)                              \
+            .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::laplace_matrix)                                \
             .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::skeleton);                                           \
     }
 
@@ -272,6 +272,10 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("as_simplex_list", &hg::VRComplexFromMatrix<hg::ComplexFromCoordMatrix, Type, hg::PointsType::POINT_PTR>::as_simplex_list)                           \
             .def("filtration", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::filtration)                                          \
             .def("simplex_from_indexes", &hg::ComplexFromCoordMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::simplex_from_indexes)               \
+            .def("projection", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::projection)                                          \
+            .def("distance", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::distance)                                              \
+            .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::boundary_matrix)                                \
+            .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::laplace_matrix)                                  \
             .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                             \
     }
 
@@ -284,6 +288,10 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("as_simplex_list", &hg::LpComplexFromMatrix<hg::ComplexFromCoordMatrix, Type, hg::PointsType::POINT_PTR>::as_simplex_list)                           \
             .def("filtration", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::filtration)                                          \
             .def("simplex_from_indexes", &hg::ComplexFromCoordMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::simplex_from_indexes)               \
+            .def("projection", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::projection)                                          \
+            .def("distance", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::distance)                                              \
+            .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::boundary_matrix)                                \
+            .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::laplace_matrix)                                  \
             .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                             \
     }
 

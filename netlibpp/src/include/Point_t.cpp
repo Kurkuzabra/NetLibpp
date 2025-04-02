@@ -31,6 +31,15 @@ struct Point
         }
         return std::sqrt(dist);
     }
+    T distance(const T* point) const
+    {
+        T dist = 0;
+        for (size_t i = 0; i < coordinates.size(); i++)
+        {
+            dist += std::pow((coordinates[i] - point[i]), 2.0);
+        }
+        return std::sqrt(dist);
+    }
     inline T& operator[](const size_t& i)
     {
         return coordinates[i];
@@ -50,6 +59,10 @@ struct Point
     std::vector<T> coords()
     {
         return coordinates;
+    }
+    bool operator ==(const Point& pt) const
+    {
+        return coordinates == pt.coordinates;
     }
 };
 
@@ -82,6 +95,10 @@ struct PointIndex
         throw std::logic_error("this type of point has no [size_t] method");
     }
     inline T distance(const PointIndex<T>& point) const
+    {
+        throw std::logic_error("this type of point has no distance method");
+    }
+    T distance(const T* point) const
     {
         throw std::logic_error("this type of point has no distance method");
     }
