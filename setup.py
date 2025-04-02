@@ -39,8 +39,8 @@ extra_compile_args = base_compile_args + compile_args.get(current_platform, [])
 extra_link_args = base_link_args + link_args.get(current_platform, [])
 
 if current_platform == 'darwin':
-    os.environ["CC"] = "g++-20"
-    os.environ["CXX"] = "g++-20"
+    os.environ["CC"] = "g++-13"
+    os.environ["CXX"] = "g++-13"
 
     # omp_include = f"{get_brew_path('libomp')}/include"
     # omp_lib = f"{get_brew_path('libomp')}/lib"
