@@ -24,8 +24,6 @@ classifiers = [
   #   5 - Production/Stable
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
-  # "Topic :: Software Development :: Build Tools",
-  # "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -70,5 +68,5 @@ archs = ["AMD64"]
 
 [tool.cibuildwheel.macos]
 archs = ["arm64"]
-environment = "MACOSX_DEPLOYMENT_TARGET=14.0"
+environment = "MACOSX_DEPLOYMENT_TARGET=12.0"
 before-build = "brew install libomp"
