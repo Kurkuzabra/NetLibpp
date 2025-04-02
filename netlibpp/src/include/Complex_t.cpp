@@ -142,6 +142,8 @@ namespace hypergraph
         {
             return dist_idx(A, B);
         };
+
+        ComplexFromDistMatrix(const py::array_t<T> &A) : ComplexFromMatrix<Simplex_t, T>() {}
     };
 
     template <typename Simplex_t, typename T>
@@ -222,6 +224,7 @@ namespace hypergraph
 
             return py::cast(indexes);
         }
+        ComplexFromDistMatrix(const py::array_t<T> &A) : ComplexFromMatrix<Simplex_t, T>() {}
     };
 
     template <typename Simplex_t, typename Point_t, typename T>
