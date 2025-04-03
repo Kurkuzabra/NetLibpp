@@ -28,7 +28,7 @@ struct VRComplexFromMatrix : public Derived<Simplex<size_t, T, PT>, T>
 
     void add_cofaces
     (
-        const std::vector<std::vector<size_t>>& N_lower, std::vector<size_t> tau,
+        const std::vector<std::vector<size_t>>& N_higher, std::vector<size_t> tau,
         std::vector<size_t> clique_vertexes, size_t next, size_t max_dim
     )
     {
@@ -38,37 +38,38 @@ struct VRComplexFromMatrix : public Derived<Simplex<size_t, T, PT>, T>
         for (size_t i = 0; i < clique_vertexes.size(); i++)
         {
             std::vector<size_t> updated_clique_vertexes(0);
-            size_t next_vert_iter = 0;
-            const std::vector<size_t>& N_lower_i = N_lower[clique_vertexes[i]];
+            const std::vector<size_t>& N_higher_i = N_higher[clique_vertexes[i]];
+            int next_vert_iter = 0;
             for (size_t j = 0; j < clique_vertexes.size(); j++)
             {
-                while (next_vert_iter < N_lower_i.size() && N_lower_i[next_vert_iter] < clique_vertexes[j])
+                while (next_vert_iter < N_higher_i.size() && N_higher_i[next_vert_iter] < clique_vertexes[j])
                 {
                     next_vert_iter++;
                 }
-                if (next_vert_iter < N_lower_i.size() && N_lower_i[next_vert_iter] == clique_vertexes[j])
+                if (next_vert_iter < N_higher_i.size() && N_higher_i[next_vert_iter] == clique_vertexes[j])
                 {
                     updated_clique_vertexes.push_back(clique_vertexes[j]);        
                 }
             }
-            add_cofaces(N_lower, tau, updated_clique_vertexes, clique_vertexes[i], max_dim);
+            add_cofaces(N_higher, tau, updated_clique_vertexes, clique_vertexes[i], max_dim);
         }
     }
 
     VRComplexFromMatrix(const py::array_t<T>& A, T min_dist, size_t max_dim_) : Derived<Simplex<size_t, T, PT>, T>(A)
     {
-        std::vector<std::vector<size_t>> N_lower(this->N, std::vector<size_t>(0));
+        std::vector<std::vector<size_t>> N_higher(this->N, std::vector<size_t>(0));
         for (size_t i = 0; i < this->N; i++)
         {
-            for (size_t j = 0; j < i; j++)
+            for (size_t j = i + 1; j < this->N; j++)
             {
                 if (this->dist_idx(i, j) < min_dist)
                 {
-                    N_lower[i].push_back(j);
+                    N_higher[i].push_back(j);
                 }
             }
         }
 
+        py::print(N_higher);
         // 'i': index variable in OpenMP 'for' statement must have signed integral type
 
         #pragma omp parallel for
@@ -79,7 +80,7 @@ struct VRComplexFromMatrix : public Derived<Simplex<size_t, T, PT>, T>
         #endif
         {
             std::vector<size_t> tau = std::vector<size_t>(0);
-            add_cofaces(N_lower, tau, N_lower[i], i, max_dim_);
+            add_cofaces(N_higher, tau, N_higher[i], i, max_dim_);
         }
     }
 

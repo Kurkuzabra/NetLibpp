@@ -141,7 +141,8 @@ namespace hypergraph
             T dist = 0;
             for (size_t k = 0; k < matr_ptr->M; k++)
             {
-                dist += pow(matr_ptr->dist_ptr[points[i] * matr_ptr->M + k], 2) - pow(matr_ptr->dist_ptr[points[j] * matr_ptr->M + k], 2);
+                T diff = pow(matr_ptr->dist_ptr[points[i] * matr_ptr->M + k] - matr_ptr->dist_ptr[points[j] * matr_ptr->M + k], 2);
+                dist += diff * diff;
             }
             return sqrt(dist);
         }
@@ -199,6 +200,36 @@ namespace hypergraph
         explicit operator std::vector<Point_t> &()
         {
             return points;
+        }
+
+        py::list get_coords()
+        {
+            if constexpr (PT == PointsType::DIST_PTR)
+            {
+                throw std::logic_error("cannot return coordinates knowing distances");
+            }
+            else if constexpr (PT == PointsType::POINT)
+            {
+                std::vector<std::vector<T>> pts;
+                for (size_t i = 0; i < points.size(); i++)
+                {
+                    pts.push_back(points[i].coordinates);
+                }
+                return py::cast(pts);
+            }
+            else
+            {
+                std::vector<std::vector<T>> pts;
+                for (size_t i = 0; i < points.size(); i++)
+                {
+                    pts.push_back(std::vector<T>(0));
+                    for (size_t j = 0; j < matr_ptr->M; j++)
+                    {
+                        pts[pts.size() - 1].push_back(matr_ptr->dist_ptr[points[i] * matr_ptr->M + j]);
+                    }
+                }
+                return py::cast(pts);
+            }
         }
 
         // T get_volume(std::function<T(const Point_t &, const Point_t &)>);
@@ -332,22 +363,13 @@ namespace hypergraph
             }
             for (size_t k = 0; k <= M; k++)
             {
-                std::cout << "cycle" << std::endl;
+                // std::cout << "cycle" << std::endl;
 
-                for (int i = 0; i < G_.nrows(); i++)
-                {
-                    for (int j = 0; j < G_.ncols(); j++)
-                    {
-                        std::cout << std::fixed << G_[i][j] << " ";
-                    }
-                    std::cout << std::endl;
-                }
-                std::cout << std::endl;
-                // for (int i = 0; i < CI.nrows(); i++)
+                // for (int i = 0; i < G_.nrows(); i++)
                 // {
-                //     for (int j = 0; j < CI.ncols(); j++)
+                //     for (int j = 0; j < G_.ncols(); j++)
                 //     {
-                //         std::cout << std::fixed << CI[i][j] << " ";
+                //         std::cout << std::fixed << G_[i][j] << " ";
                 //     }
                 //     std::cout << std::endl;
                 // }
@@ -367,11 +389,11 @@ namespace hypergraph
                 if (result == std::numeric_limits<T>::infinity())
                     throw std::logic_error("Could not find a projection");
 
-                for (int i = 0; i < x.size(); i++)
-                {
-                    std::cout << std::fixed << x[i] << " ";
-                }
-                std::cout << std::endl;
+                // for (int i = 0; i < x.size(); i++)
+                // {
+                //     std::cout << std::fixed << x[i] << " ";
+                // }
+                // std::cout << std::endl;
 
                 if (projections.size() == 0)
                 {
@@ -426,11 +448,11 @@ namespace hypergraph
                 {
                     if constexpr (PT == PointsType::POINT_PTR)
                     {
-                        matrix[i * (mx_size) + j] = size_t_points_dist(i, j);
+                        matrix[i * (mx_size) + j] = pow(size_t_points_dist(i, j), 2.0);
                     }
                     else if constexpr (PT == PointsType::DIST_PTR)
                     {
-                        matrix[i * (mx_size) + j] = matr_ptr->dist_ptr[i * matr_ptr->M + j];
+                        matrix[i * (mx_size) + j] = pow(matr_ptr->dist_ptr[i * matr_ptr->M + j], 2.0);
                     }
                     else
                     {

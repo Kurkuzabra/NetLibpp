@@ -5,6 +5,8 @@
 #include <functional>
 #include <exception>
 
+#define EPSILON 0.000001
+
 namespace hypergraph
 {
 
@@ -63,6 +65,21 @@ struct Point
     bool operator ==(const Point& pt) const
     {
         return coordinates == pt.coordinates;
+    }
+    bool operator <(const Point& pt) const
+    {
+        for (size_t i = 0; i < coordinates.size(); i++)
+        {
+            if (coordinates[i] > pt.coordinates[i] + EPSILON)
+            {
+                return false;
+            }
+            else if (coordinates[i] + EPSILON < pt.coordinates[i] )
+            {
+                return true;
+            }
+        }
+        return false;
     }
 };
 

@@ -242,6 +242,7 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("projection", &hg::Simplex<Type1, Type2, Type3>::projection)                                                                       \
             .def("get_volume", &hg::Simplex<Type1, Type2, Type3>::get_volume)                                                                       \
             .def("contains", &hg::Simplex<Type1, Type2, Type3>::contains)                                                                           \
+            .def("get_coords", &hg::Simplex<Type1, Type2, Type3>::get_coords)   \
             .def("distance", &hg::Simplex<Type1, Type2, Type3>::distance);                                                                          \
     }
 
@@ -260,6 +261,7 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("filtration", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::filtration)                                        \
             .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::boundary_matrix)                              \
             .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::laplace_matrix)                                \
+            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::weighted_laplace_matrix)   \
             .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::skeleton);                                           \
     }
 
@@ -276,6 +278,7 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("distance", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::distance)                                              \
             .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::boundary_matrix)                                \
             .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::laplace_matrix)                                  \
+            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::weighted_laplace_matrix)   \
             .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                             \
     }
 
@@ -292,6 +295,7 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("distance", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::distance)                                              \
             .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::boundary_matrix)                                \
             .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::laplace_matrix)                                  \
+            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::weighted_laplace_matrix)   \
             .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                             \
     }
 
