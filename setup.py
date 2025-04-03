@@ -30,7 +30,7 @@ base_link_args = []
 link_args = {
     'win32': ["-lstdc++", "-shared"],
     'linux': ["-lpthread", "-fopenmp"],
-    'darwin': ["-lpthread", "-fopenmp"]
+    'darwin': ["-lpthread"]
 }
 
 # Choose args based on the current platform
@@ -39,22 +39,20 @@ extra_compile_args = base_compile_args + compile_args.get(current_platform, [])
 extra_link_args = base_link_args + link_args.get(current_platform, [])
 
 if current_platform == 'darwin':
-    os.environ["CC"] = "gcc-13"
-    os.environ["CXX"] = "g++-13"
 
-    # omp_include = f"{get_brew_path('libomp')}/include"
-    # omp_lib = f"{get_brew_path('libomp')}/lib"
-    # if omp_include and omp_lib:
-    #     extra_compile_args.extend([
-    #         f'-I{omp_include}',  # Headers
-    #         '-Xpreprocessor',    # Required for Clang + OpenMP
-    #     ])
-    #     extra_link_args.extend([
-    #         f'-L{omp_lib}',      # Library path
-    #         '-lomp'              # Link OpenMP
-    #     ])
-    # else:
-    #     print("Warning: libomp not found via Homebrew!")
+    omp_include = f"{get_brew_path('libomp')}/include"
+    omp_lib = f"{get_brew_path('libomp')}/lib"
+    if omp_include and omp_lib:
+        extra_compile_args.extend([
+            f'-I{omp_include}',  # Headers
+            '-Xpreprocessor',    # Required for Clang + OpenMP
+        ])
+        extra_link_args.extend([
+            f'-L{omp_lib}',      # Library path
+            '-lomp'              # Link OpenMP
+        ])
+    else:
+        print("Warning: libomp not found via Homebrew!")
 
 # Define the C++ extension
 ext_modules = [
