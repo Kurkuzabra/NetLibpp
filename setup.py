@@ -23,7 +23,7 @@ compile_args = {
 
     'win32': ["/O2", "/openmp", "/std:c++20", "/MD"],
     'linux': ["-fopenmp", "-std=c++2a", "-fPIC"],
-    'darwin': ["-std=c++2a", "-fPIC", "-fopenmp"] 
+    'darwin': ["-std=c++2a", "-fPIC"] 
 }
 
 base_link_args = []
@@ -46,6 +46,7 @@ if current_platform == 'darwin':
         extra_compile_args.extend([
             f'-I{omp_include}',  # Headers
             '-Xpreprocessor',    # Required for Clang + OpenMP
+            '-fopenmp'
         ])
         extra_link_args.extend([
             f'-L{omp_lib}',      # Library path
