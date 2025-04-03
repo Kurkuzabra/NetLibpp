@@ -23,14 +23,14 @@ compile_args = {
 
     'win32': ["/O2", "/openmp", "/std:c++20", "/MD"],
     'linux': ["-fopenmp", "-std=c++2a", "-fPIC"],
-    'darwin': ["-std=c++2a", "-fPIC", "-fopenmp", "-mmacosx-version-min=12.0"] 
+    'darwin': ["-std=c++2a", "-fPIC", "-fopenmp"] 
 }
 
 base_link_args = []
 link_args = {
     'win32': ["-lstdc++", "-shared"],
     'linux': ["-lpthread", "-fopenmp"],
-    'darwin': ["-lpthread", "-fopenmp", "-mmacosx-version-min=12.0"]
+    'darwin': ["-lpthread", "-fopenmp"]
 }
 
 # Choose args based on the current platform
