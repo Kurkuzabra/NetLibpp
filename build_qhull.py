@@ -42,8 +42,8 @@ def build_qhull(qhull_dir: str) -> None:
         
     subprocess.run(build_cmd, check=True)
     if sys.platform == "win32":
-        subprocess.run("dir \"netlibpp\src\extern\qhull\build\Release\"")
-        subprocess.run("dir \"netlibpp\src\extern\qhull\build\Release\libqhullstatic_r.lib\"")
+        subprocess.run(r"dir \"netlibpp\src\extern\qhull\build\Release\"")
+        subprocess.run(r"dir \"netlibpp\src\extern\qhull\build\Release\qhullstatic_r.lib\"")
 
 if __name__ == "__main__":
     qhull_source_dir = os.path.join("netlibpp", "src", "extern", "qhull")

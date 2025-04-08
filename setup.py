@@ -30,7 +30,7 @@ compile_args = {
 
 base_link_args = []
 link_args = {
-    'win32': [r"/LIBPATH:" + os.path.normpath("netlibpp/src/extern/qhull/build/Release"), "libqhullstatic_r.lib"],
+    'win32': [r"/LIBPATH:" + os.path.normpath("netlibpp/src/extern/qhull/build/Release"), "qhullstatic_r.lib"],
     # 'win32': [r"/link netlibpp\src\extern\qhull\build\Release", "libqhullstatic_r.lib"],
     'linux': ["-lpthread", "-fopenmp", "-Lnetlibpp/src/extern/qhull/build", "-lqhullstatic_r"],
     'darwin': ["-lpthread", "-Lnetlibpp/src/extern/qhull/build", "-lqhullstatic_r"]
