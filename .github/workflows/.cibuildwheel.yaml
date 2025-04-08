@@ -44,7 +44,6 @@ jobs:
         run: python -m pip install cibuildwheel
 
       - name: Install CMake
-        if: matrix.os == "ubuntu-latest"
         run: bash -c "apt-get update && apt-get install -y cmake"
 
       - name: Set up QEMU
