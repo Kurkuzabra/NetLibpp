@@ -13,6 +13,7 @@ def build_qhull(qhull_dir: str) -> None:
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
         "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+        "-DCMAKE_POLICY_DEFAULT_CMP0000=NEW",
         "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
     ]
 
