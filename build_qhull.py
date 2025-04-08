@@ -41,6 +41,8 @@ def build_qhull(qhull_dir: str) -> None:
         build_cmd.extend(["--", f"-j{os.cpu_count()}"])
         
     subprocess.run(build_cmd, check=True)
+    subprocess.run("dir \"netlibpp\src\extern\qhull\build\Release\"")
+    subprocess.run("dir \"netlibpp\src\extern\qhull\build\Release\libqhullstatic_r.lib\"")
 
 if __name__ == "__main__":
     qhull_source_dir = os.path.join("netlibpp", "src", "extern", "qhull")
