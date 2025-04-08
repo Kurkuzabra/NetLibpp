@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         # os: [windows-latest]
         # container:
         #   image: quay.io/pypa/manylinux_2_34_x86_64
