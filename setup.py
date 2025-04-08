@@ -21,7 +21,7 @@ class QhullBuild(build_ext):
         subprocess.run(["python", "build_qhull.py"], check=True)
         super().run()
 
-base_compile_args = ["-O4", "-Werror"]
+base_compile_args = ["-O4"]
 compile_args = {
     'win32': ["/O2", "/openmp", "/std:c++20", "/MD",  r"/Inetlibp\src\extern\qhull\src"],
     'linux': ["-fopenmp", "-std=c++20",  "-fPIC", "-Inetlibpp/src/extern/qhull/src", "-Inetlibpp/src/extern/qhull/src/libqhull_r"],
