@@ -5,3 +5,5 @@ wheelhouse
 .vscode
 archive
 netlibpp/src/testing/netlibpp_cpy.cpython-312-x86_64-linux-gnu.so
+netlibpp.egg-info/
+etlibpp/src/extern/qhull/build

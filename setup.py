@@ -6,6 +6,7 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 import pybind11
 import subprocess
+from pathlib import Path
 
 # Get Homebrew's OpenMP paths (macOS-specific)
 def get_brew_path(lib_name):
@@ -14,23 +15,28 @@ def get_brew_path(lib_name):
     except subprocess.CalledProcessError:
         return None
 
-base_compile_args = ["-O4"]
-compile_args = {
-    # eigen s0ubmodule ver
-    # 'win32': ["/O2", "/openmp", "/std:c++20", "/I" + os.path.abspath('netlibpp/src/extern/eigen')],
-    # 'linux': ["-fopenmp", "-std=c++2a", "-fPIC", "-I" + os.path.abspath('netlibpp/src/extern/eigen')],
-    # 'darwin': ["-std=c++2a", "-fPIC", "-I" + os.path.abspath('netlibpp/src/extern/eigen')] 
+class QhullBuild(build_ext):
+    def run(self):
+        # Build Qhull statically
+        subprocess.run(["python", "build_qhull.py"], check=True)
+        super().run()
 
-    'win32': ["/O2", "/openmp", "/std:c++20", "/MD"],
-    'linux': ["-fopenmp", "-std=c++2a", "-fPIC"],
-    'darwin': ["-std=c++2a", "-fPIC"] 
+base_compile_args = ["-O4", "-Werror"]
+compile_args = {
+    'win32': ["/O2", "/openmp", "/std:c++20", "/MD",  r"/Inetlibp\src\extern\qhull\src"],
+    'linux': ["-fopenmp", "-std=c++20",  "-fPIC", "-Inetlibpp/src/extern/qhull/src", "-Inetlibpp/src/extern/qhull/src/libqhull_r"],
+    'darwin': ["-std=c++20", "-fPIC", "-Inetlibpp/src/extern/qhull/src"] 
 }
 
 base_link_args = []
 link_args = {
-    'win32': ["-lstdc++", "-shared"],
-    'linux': ["-lpthread", "-fopenmp"],
-    'darwin': ["-lpthread"]
+    'win32': ["-lstdc++", "-shared",  r"/link netlibpp\src\extern\qhull\build\Release\qhull_r.lib", "libqhullstatic_r.lib"],
+    'linux': ["-lpthread", "-fopenmp", "-Lnetlibpp/src/extern/qhull/build", "-lqhullstatic_r"],
+    'darwin': ["-lpthread", "-Lnetlibpp/src/extern/qhull/build", "-lqhullstatic_r"]
+}
+
+define_macros = {
+    "windows": ("qh_QHULL_dllimport", ""),
 }
 
 # Choose args based on the current platform
@@ -62,10 +68,13 @@ ext_modules = [
         sources=["netlibpp/src/include/graph_func.cpp"],
         include_dirs=[
             pybind11.get_include(),
+            os.path.join("netlibpp", "src", "extern", "qhull", "src")
         ],
         language="c++",
         extra_compile_args=extra_compile_args,
-        extra_link_args=extra_link_args
+        extra_link_args=extra_link_args,
+        # extra_objects=[os.path.join("netlibpp", "src", "extern", "qhull", "build", "libqhullstatic_r.a")],
+        define_macros=[("qh_QHpointer_1", "1")] + define_macros.get(current_platform, [])
     ),
 ]
 
@@ -85,4 +94,5 @@ setup(
         "": ["*.c", "*.cpp", "*.h", "*.hpp", "*.cc", "*.hh", "*.o"],
     },
     include_package_data=True,
+    cmdclass={"build_ext": QhullBuild},
 )

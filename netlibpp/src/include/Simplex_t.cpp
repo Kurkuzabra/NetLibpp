@@ -134,22 +134,35 @@ namespace hypergraph
     {
         // Point_t projection_impl(Point_t point, std::vector<size_t> pts_ord, size_t start_offset);
 
-        std::conditional_t<std::is_same_v<Point_t, size_t>, mtr::Matrix<T> *, std::monostate> matr_ptr;
+        std::conditional_t<std::is_same_v<Point_t, size_t>, mtr::Matrix<T> *, std::monostate> matr_ptr{};
 
+        template <typename __Point_t = Point_t, typename = std::enable_if_t<std::is_same_v<__Point_t, size_t>>>
         T size_t_points_dist(size_t i, size_t j)
         {
             T dist = 0;
             for (size_t k = 0; k < matr_ptr->M; k++)
             {
-                T diff = pow(matr_ptr->dist_ptr[points[i] * matr_ptr->M + k] - matr_ptr->dist_ptr[points[j] * matr_ptr->M + k], 2);
+                T diff = matr_ptr->dist_ptr[points[i] * matr_ptr->M + k] - matr_ptr->dist_ptr[points[j] * matr_ptr->M + k];
                 dist += diff * diff;
             }
             return sqrt(dist);
         }
+        template <typename __Point_t = Point_t, typename = std::enable_if_t<std::is_same_v<__Point_t, size_t>>>
+        T size_t_points_dist(size_t i, const Point<T>& pt)
+        {
+            T dist = 0;
+            for (size_t k = 0; k < matr_ptr->M; k++)
+            {
+                T diff = matr_ptr->dist_ptr[points[i] * matr_ptr->M + k] - pt[k];
+                dist += diff * diff;
+            }
+            return sqrt(dist);
+        }
+
         inline size_t coords_dim()
         {
             // assumes that not called por PointsType::DIST_PTR
-            if constexpr (PT == PointsType::POINT)
+            if  constexpr (PT == PointsType::POINT)
             {
                 return points[0].size();
             }
@@ -157,18 +170,24 @@ namespace hypergraph
             {
                 return matr_ptr->M;
             }
+            // throw std::logic_error("unknown point type");
         }
 
         //
 
-        size_t dim;     // dimension of a simplex
-        size_t sp_size; //
-        std::vector<Point_t> points;
-        std::optional<T> volume;
-        std::optional<T> filter;
+        size_t dim{};     // dimension of a simplex
+        size_t sp_size{}; //
+        std::vector<Point_t> points{};
+        std::optional<T> volume{};
+        std::optional<T> filter{};
 
-        Simplex(const std::vector<Point_t> &&points_) : points(points_), dim(points_.size() - 1) {}
-        Simplex(const std::vector<Point_t> &points_) : points(points_), dim(points_.size() - 1) {}
+        template <typename __Point_t = Point_t, typename = std::enable_if_t<std::is_same_v<__Point_t, size_t>>>
+        Simplex(std::vector<Point_t> &&points_, mtr::Matrix<T> * matrix) : matr_ptr(matrix), dim(points_.size() - 1), points(points_) {}
+        template <typename __Point_t = Point_t, typename = std::enable_if_t<std::is_same_v<__Point_t, size_t>>>
+        Simplex(const std::vector<Point_t> &points_, mtr::Matrix<T> * matrix) : matr_ptr(matrix), dim(points_.size() - 1), points(points_) {}
+
+        Simplex(std::vector<Point_t> &&points_) : dim(points_.size() - 1), points(points_) {}
+        Simplex(const std::vector<Point_t> &points_) : dim(points_.size() - 1), points(points_) {}
         Simplex(size_t dim_) : dim(dim_ - 1), points(std::vector<Point_t>(dim_)) {}
         Simplex() : dim(0), points(std::vector<Point_t>(0)) {}
         // Simplex() = delete;
@@ -200,6 +219,40 @@ namespace hypergraph
         explicit operator std::vector<Point_t> &()
         {
             return points;
+        }
+        bool operator ==(const Simplex& other) const 
+        {
+            if (points.size() != other.points.size())
+            {
+                return false;
+            }
+            for(size_t i = 0; i < points.size(); i++)
+            {
+                if (points[i] != other.points[i])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        bool operator <(const Simplex& other) const
+        {
+            if (points.size() != other.points.size())
+            {
+                throw std::logic_error("diff size simplex comparison");
+            }
+            for(size_t i = 0; i < points.size(); i++)
+            {
+                if (points[i] < other.points[i])
+                {
+                    return true;
+                }
+                else if (points[i] > other.points[i])
+                {
+                    return false;
+                }
+            }
+            return false;
         }
 
         py::list get_coords()

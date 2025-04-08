@@ -17,6 +17,7 @@
 #include "Complex_t.cpp"
 #include "VRComplex.cpp"
 #include "LpComplex.cpp"
+#include "AlphaComplex.cpp"
 #include "find_comb.cpp"
 
 PYBIND11_MAKE_OPAQUE(std::vector<std::array<double, 3>>)
@@ -121,7 +122,7 @@ py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const
     double *p_ptr = static_cast<double *>(p_arr.ptr);
     std::vector<std::vector<double>> result(nChoosek(A_sz, simplex_sz));
 
-    for (int i = 0; i < result.size(); i++)
+    for (size_t i = 0; i < result.size(); i++)
     {
         result[i] = std::vector<double>(p_sz);
     }
@@ -192,6 +193,13 @@ std::unique_ptr<hg::LpComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::Point
 }
 
 template <typename T>
+std::unique_ptr<hg::AlphaComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>> get_Alpha_complex(const py::array_t<T> &A, T min_dist, size_t max_dim)
+{
+    return std::unique_ptr<hg::AlphaComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>>(
+        new hg::AlphaComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>(A, min_dist, max_dim));
+}
+
+template <typename T>
 hg::Point<T> getPoint(const py::array_t<T> &A)
 {
     py::buffer_info A_arr = A.request();
@@ -242,7 +250,7 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("projection", &hg::Simplex<Type1, Type2, Type3>::projection)                                                                       \
             .def("get_volume", &hg::Simplex<Type1, Type2, Type3>::get_volume)                                                                       \
             .def("contains", &hg::Simplex<Type1, Type2, Type3>::contains)                                                                           \
-            .def("get_coords", &hg::Simplex<Type1, Type2, Type3>::get_coords)   \
+            .def("get_coords", &hg::Simplex<Type1, Type2, Type3>::get_coords)                                                                       \
             .def("distance", &hg::Simplex<Type1, Type2, Type3>::distance);                                                                          \
     }
 
@@ -261,7 +269,7 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("filtration", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::filtration)                                        \
             .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::boundary_matrix)                              \
             .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::laplace_matrix)                                \
-            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::weighted_laplace_matrix)   \
+            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::weighted_laplace_matrix)              \
             .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::DIST_PTR>, size_t, Type>::skeleton);                                           \
     }
 
@@ -278,7 +286,7 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("distance", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::distance)                                              \
             .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::boundary_matrix)                                \
             .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::laplace_matrix)                                  \
-            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::weighted_laplace_matrix)   \
+            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::weighted_laplace_matrix)                \
             .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                             \
     }
 
@@ -295,8 +303,25 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("distance", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::distance)                                              \
             .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::boundary_matrix)                                \
             .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::laplace_matrix)                                  \
-            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::weighted_laplace_matrix)   \
+            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::weighted_laplace_matrix)                \
             .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                             \
+    }
+
+#define declare_AlphaComplexFromCoordMatrix(Module, Type)                                                                                                                        \
+    {                                                                                                                                                                            \
+        py::class_<hg::AlphaComplexFromMatrix<hg::ComplexFromCoordMatrix, Type, hg::PointsType::POINT_PTR>>(Module, STRCAT("AlphaComplexFromCoordMatrix_", TOSTRING(Type))) \
+            .def(py::init<const py::array_t<Type> &, Type, size_t>())                                                                                                    \
+            .def("as_list", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::as_list)                                                           \
+            .def("as_index_list", &hg::ComplexFromMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::as_index_list)                                             \
+            .def("as_simplex_list", &hg::AlphaComplexFromMatrix<hg::ComplexFromCoordMatrix, Type, hg::PointsType::POINT_PTR>::as_simplex_list)                              \
+            .def("filtration", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::filtration)                                                     \
+            .def("simplex_from_indexes", &hg::ComplexFromCoordMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::simplex_from_indexes)                          \
+            .def("projection", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::projection)                                                     \
+            .def("distance", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::distance)                                                         \
+            .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::boundary_matrix)                                           \
+            .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::laplace_matrix)                                             \
+            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::weighted_laplace_matrix)                           \
+            .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                                        \
     }
 
 #define declare_VR_complexes(Module, Type)                                   \
@@ -312,6 +337,8 @@ PYBIND11_MODULE(netlibpp_cpy, m)
     m.doc() = "pybind11 graph filtration";
     m.def("filtrate", &filtrate, "filter complex", py::arg("A"), py::arg("n"), py::arg("p"), py::arg("threads"));
 
+    // AlphaComplex can only be double because of qhull lib
+    declare_AlphaComplexFromCoordMatrix(m, double)
     declare_VR_complexes(m, float)
         declare_VR_complexes(m, double)
 
@@ -321,14 +348,17 @@ PYBIND11_MODULE(netlibpp_cpy, m)
         // declare_VRComplexFromCoordMatrix(m, double)
         // declare_VRComplexFromCoordMatrix(m, float)
 
-        m.def("get_VR_from_dist_matrix", py::overload_cast<const py::array_t<double> &, double, size_t>(&get_VR_from_dist_matrix<double>), "get VR complex");
-    m.def("get_VR_from_dist_matrix", py::overload_cast<const py::array_t<float> &, float, size_t>(&get_VR_from_dist_matrix<float>), "get VR complex");
+        m.def("get_VR_from_dist_matrix", py::overload_cast<const py::array_t<double> &, double, size_t>(&get_VR_from_dist_matrix<double>), "");
+    m.def("get_VR_from_dist_matrix", py::overload_cast<const py::array_t<float> &, float, size_t>(&get_VR_from_dist_matrix<float>), "");
 
-    m.def("get_VR_from_coord_matrix", py::overload_cast<const py::array_t<double> &, double, size_t>(&get_VR_from_coord_matrix<double>), "get VR complex");
-    m.def("get_VR_from_coord_matrix", py::overload_cast<const py::array_t<float> &, float, size_t>(&get_VR_from_coord_matrix<float>), "get VR complex");
+    m.def("get_VR_from_coord_matrix", py::overload_cast<const py::array_t<double> &, double, size_t>(&get_VR_from_coord_matrix<double>), "");
+    m.def("get_VR_from_coord_matrix", py::overload_cast<const py::array_t<float> &, float, size_t>(&get_VR_from_coord_matrix<float>), "");
 
-    m.def("get_Lp_from_coord_matrix", py::overload_cast<const py::array_t<double> &, double, double, size_t>(&get_Lp_complex<double>), "get Lp complex");
-    m.def("get_Lp_from_coord_matrix", py::overload_cast<const py::array_t<float> &, float, double, size_t>(&get_Lp_complex<float>), "get Lp complex");
+    m.def("get_Lp_from_coord_matrix", py::overload_cast<const py::array_t<double> &, double, double, size_t>(&get_Lp_complex<double>), "");
+    m.def("get_Lp_from_coord_matrix", py::overload_cast<const py::array_t<float> &, float, double, size_t>(&get_Lp_complex<float>), "");
+
+    m.def("get_Alpha_from_coord_matrix", py::overload_cast<const py::array_t<double> &, double, size_t>(&get_Alpha_complex<double>), "");
+ 
 
     declare_Point(m, double)
         declare_Point(m, float)

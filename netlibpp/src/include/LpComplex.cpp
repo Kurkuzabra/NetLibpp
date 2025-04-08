@@ -139,7 +139,6 @@ namespace hypergraph
 
             for (size_t simplex_sz = 2; simplex_sz <= max_dim_; simplex_sz++)
             {
-                long long i = 0;
                 int64_t total_comb;
                 Combinations comb(this->N, simplex_sz);
                 compute_total_comb(this->N, simplex_sz, total_comb);

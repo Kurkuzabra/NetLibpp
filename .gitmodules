@@ -1,0 +1,3 @@
+[submodule "netlibpp/src/extern/qhull"]
+	path = netlibpp/src/extern/qhull
+	url = https://github.com/qhull/qhull.git

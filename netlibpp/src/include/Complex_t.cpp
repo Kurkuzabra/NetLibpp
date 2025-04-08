@@ -40,9 +40,9 @@ namespace hypergraph
         // all simplexes of the complex
         // simplexes[simplexse.size() - 1] is always an empty vector
 
-        Complex() : simplexes(std::vector<std::vector<Simplex_t>>(1)), dim(0) {}
-        Complex(const Complex &cplx) : simplexes(cplx.simplexes), dim(cplx.dim) {}
-        Complex(Complex &&cplx) : simplexes(std::move(cplx.simplexes)), dim(cplx.dim) {}
+        Complex() : dim(0), simplexes(std::vector<std::vector<Simplex_t>>(1)) {}
+        Complex(const Complex &cplx) : dim(cplx.dim), simplexes(cplx.simplexes) {}
+        Complex(Complex &&cplx) : dim(cplx.dim), simplexes(std::move(cplx.simplexes)) {}
         Complex &operator=(const Complex &cplx)
         {
             simplexes = cplx.simplexes;
@@ -143,13 +143,11 @@ namespace hypergraph
     struct ComplexFromDistMatrix : public ComplexFromMatrix<Simplex_t, T>
     {
         // functions to get distance between points
-        std::function<T(const size_t, const size_t)> dist_idx =
-            [&](const size_t i, const size_t j)
+        T dist_idx(const size_t& i, const size_t& j)
         {
             return this->dist_ptr[i * this->M + j];
         };
-        std::function<T(const size_t &, const size_t &)> dist =
-            [&](const size_t &A, const size_t &B)
+        T dist(const size_t &A, const size_t &B)
         {
             return dist_idx(A, B);
         };
@@ -162,34 +160,31 @@ namespace hypergraph
     {
 
         // functions to get distance between points
-        std::function<T(const size_t, const size_t)> dist_idx =
-            [&](const size_t i, const size_t j)
+        T dist_idx(const size_t i, const size_t j)
         {
             T res = 0.0;
             for (size_t k = 0; k < this->M; k++)
             {
-                res += std::pow(this->dist_ptr[i * this->M + k] - this->dist_ptr[j * this->M + k], 2);
+                T diff = this->dist_ptr[i * this->M + k] - this->dist_ptr[j * this->M + k];
+                res += diff * diff;
             }
             return std::sqrt(res);
         };
-        std::function<T(const size_t &, const size_t &)> dist =
-            [&](const size_t &A, const size_t &B)
+        T dist(const size_t &A, const size_t &B)
         {
             return dist_idx(A, B);
         };
         // functions to get lp-distance between points
-        std::function<T(const size_t &, const size_t &, const double &)> lp_dist_idx =
-            [&](const size_t &i, const size_t &j, const double &p)
+        T lp_dist_idx(const size_t &i, const size_t &j, const double &p)
         {
             T res = 0.0;
             for (size_t k = 0; k < this->M; k++)
             {
-                res += std::pow(this->dist_ptr[i * this->M + k] - this->dist_ptr[j * this->M + k], p);
+                res += std::pow(std::fabs(this->dist_ptr[i * this->M + k] - this->dist_ptr[j * this->M + k]), p);
             }
             return std::pow(res, 1.0 / p);
         };
-        std::function<T(const size_t &, const size_t &, const double &)> lp_dist =
-            [&](const size_t &A, const size_t &B, const double &p)
+        T lp_dist(const size_t &A, const size_t &B, const double &p)
         {
             return lp_dist_idx(A, B, p);
         };
