@@ -21,16 +21,16 @@ class QhullBuild(build_ext):
         subprocess.run(["python", "build_qhull.py"], check=True)
         super().run()
 
-base_compile_args = ["-O4"]
+base_compile_args = []
 compile_args = {
-    'win32': ["/O2", "/openmp", "/std:c++20", "/MD",  r"/Inetlibp\src\extern\qhull\src"],
-    'linux': ["-fopenmp", "-std=c++20",  "-fPIC", "-Inetlibpp/src/extern/qhull/src", "-Inetlibpp/src/extern/qhull/src/libqhull_r"],
-    'darwin': ["-std=c++20", "-fPIC", "-Inetlibpp/src/extern/qhull/src"] 
+    'win32': ["/O2", "/flto", "/openmp", "/std:c++20", "/MD",  r"/Inetlibp\src\extern\qhull\src"],
+    'linux': ["-O3", "-flto", "-fopenmp", "-std=c++20",  "-fPIC", "-Inetlibpp/src/extern/qhull/src", "-Inetlibpp/src/extern/qhull/src/libqhull_r"],
+    'darwin': ["-O3", "-flto", "-std=c++20", "-fPIC", "-Inetlibpp/src/extern/qhull/src"] 
 }
 
 base_link_args = []
 link_args = {
-    'win32': ["-lstdc++", "-shared",  r"/link netlibpp\src\extern\qhull\build\Release\qhull_r.lib", "libqhullstatic_r.lib"],
+    'win32': [r"/link netlibpp\src\extern\qhull\build\Release", "libqhullstatic_r.lib"],
     'linux': ["-lpthread", "-fopenmp", "-Lnetlibpp/src/extern/qhull/build", "-lqhullstatic_r"],
     'darwin': ["-lpthread", "-Lnetlibpp/src/extern/qhull/build", "-lqhullstatic_r"]
 }
