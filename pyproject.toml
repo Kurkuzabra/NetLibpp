@@ -61,7 +61,7 @@ musllinux-armv7l-image = "musllinux_1_2"
 
 [tool.cibuildwheel.linux]
 # archs = ["x86_64", "aarch64"]
-before-build = "sudo apt-get update && sudo apt-get install -y cmake"
+before-build = "apt-get update && apt-get install -y cmake"
 archs = ["x86_64"]
 
 [tool.cibuildwheel.windows]
