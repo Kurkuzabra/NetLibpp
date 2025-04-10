@@ -18,158 +18,11 @@
 #include "VRComplex.cpp"
 #include "LpComplex.cpp"
 #include "AlphaComplex.cpp"
+#include "DelaunayRipsComplex.cpp"
 #include "find_comb.cpp"
-
-PYBIND11_MAKE_OPAQUE(std::vector<std::array<double, 3>>)
-
-#define EPSILON 0.000001
-#define MAX_SEM_VAL 100000
 
 namespace py = pybind11;
 namespace hg = hypergraph;
-
-template <typename T>
-double d(double *A_ptr, int A_shape, T &simplex_ptr, std::vector<int> &perm, double p)
-{
-    Subsequences subs = Subsequences(perm.size(), 2);
-    double ds = std::numeric_limits<double>::min();
-
-    if (std::fabs(p - (double)1) < EPSILON)
-    {
-        while (subs.next())
-        {
-            double norm_sqr = 0.0;
-            const std::vector<int> &item = subs.get_subseq();
-            for (std::size_t i = 0; i < item.size() - 1; i++)
-            {
-                norm_sqr += A_ptr[simplex_ptr[perm[item[i]]] * A_shape + simplex_ptr[perm[item[i + 1]]]];
-            }
-            ds = std::max(ds, norm_sqr);
-        }
-    }
-    else if (p == std::numeric_limits<double>::infinity())
-    {
-        while (subs.next())
-        {
-            double norm_sqr = std::numeric_limits<float>::min();
-            const std::vector<int> &item = subs.get_subseq();
-            for (std::size_t i = 0; i < item.size() - 1; i++)
-            {
-                norm_sqr = std::max(norm_sqr, A_ptr[simplex_ptr[perm[item[i]]] * A_shape + simplex_ptr[perm[item[i + 1]]]]);
-            }
-            ds = std::max(ds, norm_sqr);
-        }
-    }
-    else
-    {
-        while (subs.next())
-        {
-            double norm_sqr = 0.0;
-            const std::vector<int> &item = subs.get_subseq();
-            for (std::size_t i = 0; i < item.size() - 1; i++)
-            {
-                norm_sqr += std::pow(std::fabs(A_ptr[simplex_ptr[perm[item[i]]] * A_shape + simplex_ptr[perm[item[i + 1]]]]), p);
-            }
-            ds = std::max(ds, std::pow(norm_sqr, 1.0 / p));
-        }
-    }
-    return ds;
-}
-
-double f_single_thread_(double *A_ptr, int A_sz, std::vector<int> simplex, double p)
-{
-    std::vector<int> perm(simplex.size());
-    double fs = std::numeric_limits<double>::max();
-
-    for (std::size_t i = 0; i < perm.size(); i++)
-        perm[i] = i;
-    do
-    {
-        fs = std::min(fs, d(A_ptr, A_sz, simplex, perm, p));
-    } while (std::next_permutation(perm.begin(), perm.end()));
-
-    return fs;
-}
-
-void f_multithread_part_(
-    std::vector<std::vector<double>> &result, double *A_ptr, int A_sz, double *p_ptr, int p_sz, std::vector<int> &beg_comb,
-    long long start_offset, long long tasks, std::binary_semaphore &smphSignalThreadToMain, std::counting_semaphore<MAX_SEM_VAL> &free_sem)
-{
-    Combinations comb(A_sz, beg_comb.size(), beg_comb);
-    smphSignalThreadToMain.release();
-    long long i = 0;
-    do
-    {
-        const std::vector<int> &simplex = comb.get_comb();
-
-        for (int j = 0; j < p_sz; j++)
-        {
-            result[start_offset + i][j] = f_single_thread_(A_ptr, A_sz, simplex, p_ptr[j]);
-        }
-
-        i++;
-    } while (comb.next() && i < tasks);
-    free_sem.release();
-}
-
-py::array_t<double> filtrate(const py::array_t<double> &A, int simplex_sz, const py::array_t<double> &p, int num_threads = 1)
-{
-    py::buffer_info A_arr = A.request();
-    py::buffer_info p_arr = p.request();
-    int A_sz = A_arr.shape[0];
-    const int p_sz = p_arr.shape[0];
-    double *A_ptr = static_cast<double *>(A_arr.ptr);
-    double *p_ptr = static_cast<double *>(p_arr.ptr);
-    std::vector<std::vector<double>> result(nChoosek(A_sz, simplex_sz));
-
-    for (size_t i = 0; i < result.size(); i++)
-    {
-        result[i] = std::vector<double>(p_sz);
-    }
-    Combinations comb(A_sz, simplex_sz);
-    long long i = 0;
-    if (num_threads == 1)
-    {
-        do
-        {
-            const std::vector<int> &simplex = comb.get_comb();
-            for (int j = 0; j < p_sz; j++)
-            {
-                result[i][j] = f_single_thread_(A_ptr, A_sz, simplex, p_ptr[j]);
-            }
-            i++;
-        } while (comb.next());
-    }
-    else
-    {
-        std::binary_semaphore smphSignalThreadToMain{0};
-        std::counting_semaphore<MAX_SEM_VAL> free_sem{0};
-        int64_t total_comb;
-        compute_total_comb(A_sz, simplex_sz, total_comb);
-        long long tasks = total_comb / num_threads;
-        if (total_comb % tasks > 0)
-        {
-            num_threads++;
-        }
-
-        for (long long i = 0; i < num_threads; i++)
-        {
-            std::vector<int> curr_comb(simplex_sz);
-            find_comb(A_sz, simplex_sz, tasks * i, curr_comb);
-            std::thread thr(
-                f_multithread_part_, std::ref(result), A_ptr, A_sz, p_ptr, p_sz, std::ref(curr_comb), i * tasks,
-                tasks, std::ref(smphSignalThreadToMain), std::ref(free_sem));
-            thr.detach();
-            smphSignalThreadToMain.acquire();
-        }
-
-        for (int i = 0; i < num_threads; i++)
-        {
-            free_sem.acquire();
-        }
-    }
-    return py::array_t<double>(py::cast(std::ref(result)));
-}
 
 template <typename T>
 std::unique_ptr<hg::VRComplexFromMatrix<hg::ComplexFromDistMatrix, T, hg::PointsType::DIST_PTR>> get_VR_from_dist_matrix(const py::array_t<T> &A, T min_dist, size_t sz)
@@ -193,10 +46,17 @@ std::unique_ptr<hg::LpComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::Point
 }
 
 template <typename T>
-std::unique_ptr<hg::AlphaComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>> get_Alpha_complex(const py::array_t<T> &A, T min_dist, size_t max_dim)
+std::unique_ptr<hg::AlphaComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>> get_Alpha_complex(const py::array_t<T> &A, T max_rad)
 {
     return std::unique_ptr<hg::AlphaComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>>(
-        new hg::AlphaComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>(A, min_dist, max_dim));
+        new hg::AlphaComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>(A, max_rad));
+}
+
+template <typename T>
+std::unique_ptr<hg::DelaunayRipsComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>> get_DelaunayRips_complex(const py::array_t<T> &A, T max_dist)
+{
+    return std::unique_ptr<hg::DelaunayRipsComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>>(
+        new hg::DelaunayRipsComplexFromMatrix<hg::ComplexFromCoordMatrix, T, hg::PointsType::POINT_PTR>(A, max_dist));
 }
 
 template <typename T>
@@ -251,6 +111,7 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("get_volume", &hg::Simplex<Type1, Type2, Type3>::get_volume)                                                                       \
             .def("contains", &hg::Simplex<Type1, Type2, Type3>::contains)                                                                           \
             .def("get_coords", &hg::Simplex<Type1, Type2, Type3>::get_coords)                                                                       \
+            .def("get_circumradius", &hg::Simplex<Type1, Type2, Type3>::get_circumsphere_radius) \
             .def("distance", &hg::Simplex<Type1, Type2, Type3>::distance);                                                                          \
     }
 
@@ -307,21 +168,38 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
             .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                             \
     }
 
-#define declare_AlphaComplexFromCoordMatrix(Module, Type)                                                                                                                        \
-    {                                                                                                                                                                            \
+#define declare_AlphaComplexFromCoordMatrix(Module, Type)                                                                                                                   \
+    {                                                                                                                                                                       \
         py::class_<hg::AlphaComplexFromMatrix<hg::ComplexFromCoordMatrix, Type, hg::PointsType::POINT_PTR>>(Module, STRCAT("AlphaComplexFromCoordMatrix_", TOSTRING(Type))) \
-            .def(py::init<const py::array_t<Type> &, Type, size_t>())                                                                                                    \
-            .def("as_list", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::as_list)                                                           \
-            .def("as_index_list", &hg::ComplexFromMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::as_index_list)                                             \
+            .def(py::init<const py::array_t<Type> &, Type>())                                                                                                               \
+            .def("as_list", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::as_list)                                                      \
+            .def("as_index_list", &hg::ComplexFromMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::as_index_list)                                        \
             .def("as_simplex_list", &hg::AlphaComplexFromMatrix<hg::ComplexFromCoordMatrix, Type, hg::PointsType::POINT_PTR>::as_simplex_list)                              \
-            .def("filtration", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::filtration)                                                     \
-            .def("simplex_from_indexes", &hg::ComplexFromCoordMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::simplex_from_indexes)                          \
-            .def("projection", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::projection)                                                     \
-            .def("distance", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::distance)                                                         \
-            .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::boundary_matrix)                                           \
-            .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::laplace_matrix)                                             \
-            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::weighted_laplace_matrix)                           \
-            .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                                        \
+            .def("filtration", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::filtration)                                                \
+            .def("simplex_from_indexes", &hg::ComplexFromCoordMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::simplex_from_indexes)                     \
+            .def("projection", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::projection)                                                \
+            .def("distance", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::distance)                                                    \
+            .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::boundary_matrix)                                      \
+            .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::laplace_matrix)                                        \
+            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::weighted_laplace_matrix)                      \
+            .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                                   \
+    }
+
+#define declare_DelaunayRipsComplexFromCoordMatrix(Module, Type)                                                                                                                               \
+    {                                                                                                                                                                                          \
+        py::class_<hg::DelaunayRipsComplexFromMatrix<hg::ComplexFromCoordMatrix, Type, hg::PointsType::POINT_PTR>>(Module, STRCAT("DelaunayRipsComplexFromCoordMatrix_", TOSTRING(Type))) \
+            .def(py::init<const py::array_t<Type> &, Type>())                                                                                                                                  \
+            .def("as_list", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::as_list)                                                                         \
+            .def("as_index_list", &hg::ComplexFromMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::as_index_list)                                                           \
+            .def("as_simplex_list", &hg::DelaunayRipsComplexFromMatrix<hg::ComplexFromCoordMatrix, Type, hg::PointsType::POINT_PTR>::as_simplex_list)                                     \
+            .def("filtration", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::filtration)                                                                   \
+            .def("simplex_from_indexes", &hg::ComplexFromCoordMatrix<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, Type>::simplex_from_indexes)                                        \
+            .def("projection", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::projection)                                                                   \
+            .def("distance", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::distance)                                                                       \
+            .def("boundary_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::boundary_matrix)                                                         \
+            .def("laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::laplace_matrix)                                                           \
+            .def("weighted_laplace_matrix", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::weighted_laplace_matrix)                                         \
+            .def("skeleton", &hg::Complex<hg::Simplex<size_t, Type, hg::PointsType::POINT_PTR>, size_t, Type>::skeleton);                                                                      \
     }
 
 #define declare_VR_complexes(Module, Type)                                   \
@@ -334,13 +212,11 @@ hg::Simplex<hg::Point<T>, T, hg::PointsType::POINT> get_Simplex_by_points(const 
 
 PYBIND11_MODULE(netlibpp_cpy, m)
 {
-    m.doc() = "pybind11 graph filtration";
-    m.def("filtrate", &filtrate, "filter complex", py::arg("A"), py::arg("n"), py::arg("p"), py::arg("threads"));
-
     // AlphaComplex can only be double because of qhull lib
     declare_AlphaComplexFromCoordMatrix(m, double)
-    declare_VR_complexes(m, float)
-        declare_VR_complexes(m, double)
+    declare_DelaunayRipsComplexFromCoordMatrix(m, double)
+        declare_VR_complexes(m, float)
+            declare_VR_complexes(m, double)
 
         // declare_VRComplexFromDistMatrix(m, double)
         // declare_VRComplexFromDistMatrix(m, float)
@@ -357,8 +233,8 @@ PYBIND11_MODULE(netlibpp_cpy, m)
     m.def("get_Lp_from_coord_matrix", py::overload_cast<const py::array_t<double> &, double, double, size_t>(&get_Lp_complex<double>), "");
     m.def("get_Lp_from_coord_matrix", py::overload_cast<const py::array_t<float> &, float, double, size_t>(&get_Lp_complex<float>), "");
 
-    m.def("get_Alpha_from_coord_matrix", py::overload_cast<const py::array_t<double> &, double, size_t>(&get_Alpha_complex<double>), "");
- 
+    m.def("get_Alpha_from_coord_matrix", py::overload_cast<const py::array_t<double> &, double>(&get_Alpha_complex<double>), "");
+    m.def("get_DelaunayRips_from_coord_matrix", py::overload_cast<const py::array_t<double> &, double>(&get_DelaunayRips_complex<double>), "");
 
     declare_Point(m, double)
         declare_Point(m, float)
@@ -371,8 +247,4 @@ PYBIND11_MODULE(netlibpp_cpy, m)
         declare_Simplex(m, hg::Point<float>, float, hg::PointsType::POINT)
             m.def("Simplex", py::overload_cast<const py::array_t<double> &>(&get_Simplex_by_points<double>), "get Simplex");
     m.def("Simplex", py::overload_cast<const py::array_t<float> &>(&get_Simplex_by_points<float>), "get Simplex");
-
-    // py::class_<hg::bind_Simplex<hg::Point<double>, double>>(m, "Simplex")
-    //     .def(py::init<const py::array_t<double>&>())
-    //     .def("projection", &hg::bind_Simplex<hg::Point<double>, double>::projection);
 }

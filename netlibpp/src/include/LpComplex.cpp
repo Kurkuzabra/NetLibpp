@@ -20,8 +20,6 @@
 #include "VRComplex.cpp"
 #include "find_comb.cpp"
 
-#define LP_VR_CMPLX_OPTIM
-
 namespace hypergraph
 {
 
@@ -194,5 +192,3 @@ namespace hypergraph
     };
 
 }
-
-#undef LP_VR_CMPLX_OPTIM

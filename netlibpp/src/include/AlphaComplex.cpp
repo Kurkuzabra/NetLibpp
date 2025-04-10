@@ -51,96 +51,13 @@ namespace hypergraph
     struct AlphaComplexFromMatrix : public Derived<Simplex<size_t, T, PT>, T>
     {
     private:
+        T max_rad;
 
-        T __squared_norm(const size_t &i)
+        T circumscribed_sphere_radius_nd(const std::vector<size_t> &support)
         {
-            T sum = 0.0;
-                for (size_t k = 0; k < this->M; k++)
-                {
-                    T diff = this->dist_ptr[i * this->M + k];
-                    sum += diff * diff;
-                }
-            return sum;
-        }
-
-        T __pt_distnce(const Point<T> &pt, const size_t &i)
-        {
-            T dist = 0;
-            for (size_t k = 0; k < this->M; k++)
-            {
-                T diff = this->dist_ptr[i * this->M + k] - pt[k];
-                dist += diff * diff;
-            }
-            return sqrt(dist);
-        }
-
-        T circumscribed_sphere_radius_nd(const std::vector<size_t> &points)
-        {
-            const int d = this->M;
-            assert(points.size() == d + 1);
-
-            // Construct matrix A and vector b
-            std::vector<std::vector<T>> A(d, std::vector<T>(d));
-            std::vector<T> b(d);
-
-            const size_t p0 = points[0];
-            for (int i = 0; i < d; ++i)
-            {
-                const size_t pi = points[i + 1];
-                for (int j = 0; j < d; ++j)
-                {
-                    A[i][j] = this->dist_ptr[pi * this->M + j] - this->dist_ptr[p0 * this->M + j];
-                }
-                b[i] = 0.5 * (__squared_norm(pi) - __squared_norm(p0));
-            }
-
-            // Solve A * c = b (Gaussian elimination)
-            std::vector<T> c(d);
-            for (int col = 0; col < d; ++col)
-            {
-                // Partial pivoting
-                int max_row = col;
-                for (int row = col + 1; row < d; ++row)
-                {
-                    if (std::abs(A[row][col]) > std::abs(A[max_row][col]))
-                    {
-                        max_row = row;
-                    }
-                }
-                std::swap(A[col], A[max_row]);
-                std::swap(b[col], b[max_row]);
-
-                // Eliminate column
-                for (int row = col + 1; row < d; ++row)
-                {
-                    T factor = A[row][col] / A[col][col];
-                    for (int k = col; k < d; ++k)
-                    {
-                        A[row][k] -= factor * A[col][k];
-                    }
-                    b[row] -= factor * b[col];
-                }
-            }
-
-            // Back substitution
-            for (int row = d - 1; row >= 0; --row)
-            {
-                c[row] = b[row];
-                for (int col = row + 1; col < d; ++col)
-                {
-                    c[row] -= A[row][col] * c[col];
-                }
-                c[row] /= A[row][row];
-            }
-
-            // Compute radius
-            Point<T> center(d);
-            for (int i = 0; i < d; ++i)
-                center[i] = c[i] + this->dist_ptr[p0 * this->M + i];
-            T radius = __pt_distnce(center, p0);
-
-            return radius;
-        }
+            Simplex<size_t, T, PT> splx(support, static_cast<mtr::Matrix<T> *>(this));
+            return splx.get_circumsphere_radius();
+        }        
 
         // Base case: Minimal sphere for up to (n+1) points in n-D space
         T minimal_sphere_radius(const std::vector<size_t> &support)
@@ -157,19 +74,30 @@ namespace hypergraph
             }
             else
             {
-                py::print("cnt sphere");
-                // return 0;
+                // For 2 dims use formula
+                // T a = this->dist_idx(support[0], support[1]);
+                // T b = this->dist_idx(support[1], support[2]);
+                // T c = this->dist_idx(support[2], support[0]);
+                // return (a * b * c) / sqrt((a + b + c) * (-a + b + c) * (a - b + c) * (a + b - c));
                 return circumscribed_sphere_radius_nd(support);
+                // For d+1 points, solve the circumscribed sphere (using linear algebra)
             }
-            // For d+1 points, solve the circumscribed sphere (using linear algebra)
-            // (Implementation depends on solving a linear system)
-            // Placeholder: Fallback to Ritter's approximation if not implemented
         }
 
-        void process_facet(std::vector<std::set<Simplex<size_t, T, PT>>> &simplexes_, const std::vector<size_t> &simplex)
+        void process_facet(std::vector<std::set<Simplex<size_t, T, PT>>> &simplexes_,
+                           const std::vector<size_t> &simplex, bool already_satisfy = false)
         {
-            if (simplex.size() == 2)
+            if (simplex.size() == 1)
                 return;
+
+            if (!already_satisfy)
+            {
+                already_satisfy = minimal_sphere_radius(simplex) <= max_rad;
+            }
+            if (already_satisfy)
+            {
+                simplexes_[simplex.size() - 1].insert(Simplex<size_t, T, PT>(simplex, static_cast<mtr::Matrix<T> *>(this)));
+            }
 
             size_t sz = simplex.size();
             for (size_t i = 0; i < sz; i++)
@@ -185,13 +113,12 @@ namespace hypergraph
                     points_[j] = simplex[j_];
                     j_++;
                 }
-                process_facet(simplexes_, points_);
-                simplexes_[sz - 1].insert(Simplex<size_t, T, PT>(std::move(points_), static_cast<mtr::Matrix<T> *>(this)));
+                process_facet(simplexes_, points_, already_satisfy);
             }
         }
 
     public:
-        AlphaComplexFromMatrix(const py::array_t<T> &A, T min_dist, size_t max_dim_) : Derived<Simplex<size_t, T, PT>, T>(A)
+        AlphaComplexFromMatrix(const py::array_t<T> &A, T _max_rad) : Derived<Simplex<size_t, T, PT>, T>(A), max_rad(_max_rad)
         {
             py::buffer_info A_arr = A.request();
             T *A_ptr = static_cast<T *>(A_arr.ptr);
@@ -199,7 +126,7 @@ namespace hypergraph
             qhT qh_qh;
             qhT *qh = &qh_qh;
             qh_zero(qh, stderr);
-            const char *flags = "qhull d Qbb Qc Qt";
+            const char *flags = "qhull d Qbb Qc Qt Qz";
             qh_new_qhull(qh, static_cast<int>(this->M),
                          static_cast<int>(this->N),
                          const_cast<T *>(A_ptr),
@@ -215,10 +142,10 @@ namespace hypergraph
 
                     FOREACHvertex_(facet->vertices)
                     {
-                        simplex.push_back(static_cast<size_t>(vertex->id - 1));
+                        int vertex_id = qh_pointid(qh, vertex->point);
+                        simplex.push_back(static_cast<size_t>(vertex_id));
                     }
-                    std::reverse(simplex.begin(), simplex.end());
-                    this->append(Simplex<size_t, T, PT>(simplex));
+                    std::sort(simplex.begin(), simplex.end());
                     process_facet(simplexes_, simplex);
                 }
             }
@@ -232,6 +159,13 @@ namespace hypergraph
                 {
                     this->append(const_cast<Simplex<size_t, T, PT> &>(*it));
                 }
+            }
+            qh_freeqhull(qh, !qh_ALL);
+            int curlong, totlong;
+            qh_memfreeshort(qh, &curlong, &totlong);
+            if (curlong || totlong)
+            {
+                std::cerr << "Qhull memory leak: " << curlong << " " << totlong << std::endl;
             }
         }
 

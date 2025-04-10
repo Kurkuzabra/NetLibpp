@@ -3,9 +3,6 @@ from typing import List, TypeVar, Generic
 
 T = TypeVar("T", numpy.float32, numpy.float64)
 
-def filtrate(A: numpy.ndarray[numpy.float64], n: int, p: numpy.ndarray[numpy.float64], threads: int) -> numpy.ndarray[numpy.float64]:
-    ...
-
 class Point(Generic[T]):
     """
     A template class for points.
@@ -84,6 +81,14 @@ class Simplex(Generic[Point_t, T]):
             - Point_t must be Point[T].
         """
         ...
+    def get_circumsphere_radius(self) -> T:
+        """
+        Gets circumsphere radius of simplex. Returns NaN in degenerate cases.
+            
+        :returns: circumsphere radius
+
+        """
+        ...
 
 class Complex(Generic[Point_t, T]):
     """
@@ -132,7 +137,7 @@ class Complex(Generic[Point_t, T]):
         """
         ...
 
-    def boundary_matrix() -> numpy.array[T]:
+    def boundary_matrix(s_dim: int) -> numpy.array[T]:
         """
         computes boundary matrix of s_dim - 1 and s_dim simplexes
 
@@ -142,13 +147,31 @@ class Complex(Generic[Point_t, T]):
         """
         ...
 
-    def laplace_matrix() -> numpy.array[T]:
+    def laplace_matrix(s_dim: int) -> numpy.array[T]:
         """
         computes laplace matrix of s_dim - 1 and s_dim simplexes
 
-        L_[k] = B_[k].T * W_[k] * B_[k] + B_[k+1] * W_[k] * B_[k+1].T
+        L_[k] = B_[k].T * B_[k] + B_[k+1] * B_[k+1].T
 
         L_[0] = B_[1] * B_[1]^T
+
+        ??? says special case but can be computed by normal formula ???
+        
+        to be discussed 
+
+        :returns: laplacian of complex
+        """
+        ...
+
+    def weighted_laplace_matrix(s_dim: int) -> numpy.array[T]:
+        """
+        computes weignted laplace matrix of s_dim - 1 and s_dim simplexes
+
+        L_[k] = B_[k].T * W_[k] * B_[k] + B_[k+1] * W_[k] * B_[k+1].T
+
+        L_[0] = B_[1] * W_[0] * B_[1]^T
+
+        where weights are volumes of simplexes
 
         ??? says special case but can be computed by normal formula ???
         
@@ -204,4 +227,10 @@ def get_VR_from_coord_matrix(A: numpy.ndarray[T], max_dist: int, max_dim: int) -
     ...
 
 def get_Lp_from_coord_matrix(A: numpy.ndarray[T], max_dist: int, p: numpy.float64, max_dim: int) -> ComplexFromCoordMatrix[PointIndex[T], T]:
+    ...
+
+def get_Alpha_from_coord_matrix(A: numpy.ndarray[T], max_radius: numpy.float64) -> ComplexFromCoordMatrix[PointIndex[T], T]:
+    ...
+
+def get_DelaunayRips_from_coord_matrix(A: numpy.ndarray[T], max_dist: numpy.float64) -> ComplexFromCoordMatrix[PointIndex[T], T]:
     ...

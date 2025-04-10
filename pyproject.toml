@@ -7,10 +7,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "netlibpp"
 version = "0.0.10"
-description = "A geometric Python lib"
+description = "A Python lib for geometric complexes construction"
 readme = "README.md"
 requires-python = ">=3.12"
-keywords = ["sample", "setuptools", "development"]
+keywords = ["geometry", "complexes", "cpython"]
 
 
 authors = [{ name = "Victor", email = "vactor.pavlov.vadimovich@gmail.com" }]

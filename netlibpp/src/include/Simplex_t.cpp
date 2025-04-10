@@ -142,13 +142,14 @@ namespace hypergraph
             T dist = 0;
             for (size_t k = 0; k < matr_ptr->M; k++)
             {
-                T diff = matr_ptr->dist_ptr[points[i] * matr_ptr->M + k] - matr_ptr->dist_ptr[points[j] * matr_ptr->M + k];
+                T diff = matr_ptr->dist_ptr[points[i] * matr_ptr->M + k] -
+                         matr_ptr->dist_ptr[points[j] * matr_ptr->M + k];
                 dist += diff * diff;
             }
             return sqrt(dist);
         }
         template <typename __Point_t = Point_t, typename = std::enable_if_t<std::is_same_v<__Point_t, size_t>>>
-        T size_t_points_dist(size_t i, const Point<T>& pt)
+        T size_t_points_dist(size_t i, const Point<T> &pt)
         {
             T dist = 0;
             for (size_t k = 0; k < matr_ptr->M; k++)
@@ -162,7 +163,7 @@ namespace hypergraph
         inline size_t coords_dim()
         {
             // assumes that not called por PointsType::DIST_PTR
-            if  constexpr (PT == PointsType::POINT)
+            if constexpr (PT == PointsType::POINT)
             {
                 return points[0].size();
             }
@@ -182,9 +183,9 @@ namespace hypergraph
         std::optional<T> filter{};
 
         template <typename __Point_t = Point_t, typename = std::enable_if_t<std::is_same_v<__Point_t, size_t>>>
-        Simplex(std::vector<Point_t> &&points_, mtr::Matrix<T> * matrix) : matr_ptr(matrix), dim(points_.size() - 1), points(points_) {}
+        Simplex(std::vector<Point_t> &&points_, mtr::Matrix<T> *matrix) : matr_ptr(matrix), dim(points_.size() - 1), points(points_) {}
         template <typename __Point_t = Point_t, typename = std::enable_if_t<std::is_same_v<__Point_t, size_t>>>
-        Simplex(const std::vector<Point_t> &points_, mtr::Matrix<T> * matrix) : matr_ptr(matrix), dim(points_.size() - 1), points(points_) {}
+        Simplex(const std::vector<Point_t> &points_, mtr::Matrix<T> *matrix) : matr_ptr(matrix), dim(points_.size() - 1), points(points_) {}
 
         Simplex(std::vector<Point_t> &&points_) : dim(points_.size() - 1), points(points_) {}
         Simplex(const std::vector<Point_t> &points_) : dim(points_.size() - 1), points(points_) {}
@@ -220,13 +221,13 @@ namespace hypergraph
         {
             return points;
         }
-        bool operator ==(const Simplex& other) const 
+        bool operator==(const Simplex &other) const
         {
             if (points.size() != other.points.size())
             {
                 return false;
             }
-            for(size_t i = 0; i < points.size(); i++)
+            for (size_t i = 0; i < points.size(); i++)
             {
                 if (points[i] != other.points[i])
                 {
@@ -235,13 +236,13 @@ namespace hypergraph
             }
             return true;
         }
-        bool operator <(const Simplex& other) const
+        bool operator<(const Simplex &other) const
         {
             if (points.size() != other.points.size())
             {
                 throw std::logic_error("diff size simplex comparison");
             }
-            for(size_t i = 0; i < points.size(); i++)
+            for (size_t i = 0; i < points.size(); i++)
             {
                 if (points[i] < other.points[i])
                 {
@@ -289,6 +290,7 @@ namespace hypergraph
         // get volume from distance matrix
         T get_volume();
         // get volume from vector coordinates
+        T get_circumsphere_radius();
 
         std::vector<Point<T>> projection_impl(const Point<T> &, T &);
         std::vector<Point<T>> projection(const Point<T> &);
@@ -308,7 +310,7 @@ namespace hypergraph
         template <typename Points_t>
         inline void set_vectors(const Points_t &pts, const size_t &n, const size_t &m)
         {
-            // requires Point_t not PointIndex
+            // requires Point_t not size_t
             points = std::vector<Point_t>(n, Point_t(m));
             for (size_t i = 0; i < n; i++)
             {
@@ -416,18 +418,6 @@ namespace hypergraph
             }
             for (size_t k = 0; k <= M; k++)
             {
-                // std::cout << "cycle" << std::endl;
-
-                // for (int i = 0; i < G_.nrows(); i++)
-                // {
-                //     for (int j = 0; j < G_.ncols(); j++)
-                //     {
-                //         std::cout << std::fixed << G_[i][j] << " ";
-                //     }
-                //     std::cout << std::endl;
-                // }
-                // std::cout << std::endl;
-
                 detail::ATA(G_, G);
                 quadprogpp::Vector<T> x_ = quadprogpp::Vector<T>(M);
                 quadprogpp::Vector<T> _g0(g0);
@@ -441,13 +431,6 @@ namespace hypergraph
                 }
                 if (result == std::numeric_limits<T>::infinity())
                     throw std::logic_error("Could not find a projection");
-
-                // for (int i = 0; i < x.size(); i++)
-                // {
-                //     std::cout << std::fixed << x[i] << " ";
-                // }
-                // std::cout << std::endl;
-
                 if (projections.size() == 0)
                 {
                     projections.push_back(x);
@@ -517,13 +500,77 @@ namespace hypergraph
             for (size_t i = 0; i < mx_size; i++)
                 matrix[i * (mx_size) + i] = 0.0f;
             for (size_t i = 0; i < dim + 1; i++)
+            {
                 matrix[i * (mx_size) + dim + 1] = 1.0f;
-            for (size_t i = 0; i < dim + 1; i++)
                 matrix[(dim + 1) * (mx_size) + i] = 1.0f;
+            }
             volume = std::sqrt(fabs(determinant(matrix, mx_size)) / (T)std::pow(detail::factorial(dim), 2) / (T)std::pow(2, dim));
             delete[] matrix;
             return volume.value();
         }
+    }
+
+    template <typename Point_t, typename T, PointsType PT>
+    T Simplex<Point_t, T, PT>::get_circumsphere_radius()
+    {
+        size_t mx_size = dim + 2;
+        T *matrix = new T[(mx_size) * (mx_size)];
+        for (size_t i = 0; i < dim + 1; i++)
+        {
+            for (size_t j = i + 1; j < dim + 1; j++)
+            {
+                if constexpr (PT == PointsType::POINT_PTR)
+                {
+                    matrix[(i + 1) * (mx_size) + (j + 1)] = pow(size_t_points_dist(i, j), 2.0);
+                }
+                else if constexpr (PT == PointsType::DIST_PTR)
+                {
+                    matrix[(i + 1) * (mx_size) + (j + 1)] = pow(matr_ptr->dist_ptr[i * matr_ptr->M + j], 2.0);
+                }
+                else
+                {
+                    matrix[(i + 1) * (mx_size) + (j + 1)] = pow(points[i].distance(points[j]), 2.0);
+                }
+                matrix[(j + 1) * (mx_size) + (i + 1)] = matrix[(i + 1) * (mx_size) + (j + 1)];
+            }
+        }
+        for (size_t i = 0; i < mx_size; i++)
+        {
+            matrix[i * (mx_size) + i] = 0.0f;
+        }
+        for (size_t i = 1; i < mx_size; i++)
+        {
+            matrix[i * (mx_size)] = 1.0f;
+            matrix[i] = 1.0f;
+        }
+        T __V = fabs(determinant(matrix, mx_size));
+        mx_size = dim + 1;
+        for (size_t i = 0; i < mx_size; i++)
+        {
+            for (size_t j = i + 1; j < mx_size; j++)
+            {
+                if constexpr (PT == PointsType::POINT_PTR)
+                {
+                    matrix[i * mx_size + j] = pow(size_t_points_dist(i, j), 2.0);
+                }
+                else if constexpr (PT == PointsType::DIST_PTR)
+                {
+                    matrix[i * mx_size + j] = pow(matr_ptr->dist_ptr[i * matr_ptr->M + j], 2.0);
+                }
+                else
+                {
+                    matrix[i * mx_size + j] = pow(points[i].distance(points[j]), 2.0);
+                }
+                matrix[j *mx_size + i] = matrix[i * mx_size + j];
+            }
+        }
+        for (size_t i = 0; i < dim + 1; i++)
+        {
+            matrix[i * mx_size + i] = 0.0f;
+        }
+        T __T = fabs(determinant(matrix, dim + 1));
+        delete[] matrix;
+        return sqrt(__T / __V / 2.0);
     }
 
     template <typename Point_t, typename T, PointsType PT>
@@ -573,5 +620,4 @@ namespace hypergraph
         }
         return true;
     }
-
 }

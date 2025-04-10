@@ -24,16 +24,15 @@ class QhullBuild(build_ext):
 base_compile_args = []
 compile_args = {
     'win32': ["/O2", "/flto", "/openmp", "/std:c++20", "/MD",  r"/Inetlibp\src\extern\qhull\src"],
-    'linux': ["-O3", "-flto", "-fopenmp", "-std=c++20",  "-fPIC", "-Inetlibpp/src/extern/qhull/src", "-Inetlibpp/src/extern/qhull/src/libqhull_r"],
-    'darwin': ["-O3", "-flto", "-std=c++20", "-fPIC", "-Inetlibpp/src/extern/qhull/src"] 
+    'linux': ["-O3", "-fopenmp", "-std=c++20",  "-fPIC", "-Inetlibpp/src/extern/qhull/src", "-Inetlibpp/src/extern/qhull/src/libqhull_r"],
+    'darwin': ["-O3", "-std=c++20", "-fPIC", "-Inetlibpp/src/extern/qhull/src"] 
 }
 
 base_link_args = []
 link_args = {
     'win32': [r"/LIBPATH:" + os.path.normpath("netlibpp/src/extern/qhull/build/Release"), "qhullstatic_r.lib"],
-    # 'win32': [r"/link netlibpp\src\extern\qhull\build\Release", "libqhullstatic_r.lib"],
-    'linux': ["-lpthread", "-fopenmp", "-Lnetlibpp/src/extern/qhull/build", "-lqhullstatic_r"],
-    'darwin': ["-lpthread", "-Lnetlibpp/src/extern/qhull/build", "-lqhullstatic_r"]
+    'linux': ["-flto", "-lpthread", "-fopenmp", "-Lnetlibpp/src/extern/qhull/build", "-lqhullstatic_r"],
+    'darwin': ["-flto", "-lpthread", "-Lnetlibpp/src/extern/qhull/build", "-lqhullstatic_r"]
 }
 
 define_macros = {
@@ -66,7 +65,7 @@ if current_platform == 'darwin':
 ext_modules = [
     Extension(
         name="netlibpp_cpy",
-        sources=["netlibpp/src/include/graph_func.cpp"],
+        sources=["netlibpp/src/include/bindings.cpp"],
         include_dirs=[
             pybind11.get_include(),
             os.path.join("netlibpp", "src", "extern", "qhull", "src")

@@ -83,46 +83,4 @@ namespace hypergraph
         }
     };
 
-    template <typename T>
-    struct PointIndex
-    {
-        size_t index;
-
-        PointIndex() {}
-        PointIndex(const size_t &index_) : index(index_) {}
-        inline const size_t &get_index() const
-        {
-            return index;
-        }
-        operator size_t()
-        {
-            return index;
-        }
-
-        inline size_t size()
-        {
-            throw std::logic_error("this type of point has no size() method");
-        }
-        inline T &operator[](const size_t &i)
-        {
-            throw std::logic_error("this type of point has no [size_t] method");
-        }
-        inline const T &operator[](const size_t &i) const
-        {
-            throw std::logic_error("this type of point has no [size_t] method");
-        }
-        inline T distance(const PointIndex<T> &point) const
-        {
-            throw std::logic_error("this type of point has no distance method");
-        }
-        T distance(const T *point) const
-        {
-            throw std::logic_error("this type of point has no distance method");
-        }
-        inline std::vector<T> coords()
-        {
-            throw std::logic_error("this type of point has no coords method");
-        }
-    };
-
 }
